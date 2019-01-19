@@ -5,10 +5,10 @@ Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-mii
 - anschließend Xiaomi_vac nach smarthomeNG/plugins kopieren
 - Folgendes zur etc/plugin.yaml hinzufügen
 
-    `Roboter:
+    ```Roboter:
     class_name: Robvac
     class_path: plugins.xiaomi_vac
     ip: '192.XXX.XXX.XXX'
     token: 'abc4233234454454546'
     read_cyl: 45
-    `
+    ```
