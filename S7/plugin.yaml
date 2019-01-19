@@ -1,0 +1,111 @@
+# Metadata for the S7 Plugin
+plugin:
+    # Global plugin attributes
+    type: gateway                  # plugin type (gateway, interface, protocol, system, web)
+    description:                  # Alternative: description in multiple languages
+        de: 'Zugriff auf Siemens SPSen über Snap7'
+    maintainer: '?'
+#    tester:                        # Who tests this plugin?
+    keywords: 'communication'
+#    documentation: 
+
+    version: 1.0.0              # Plugin version
+    sh_minversion: 1.5           # minimum shNG version to use this plugin
+#    sh_maxversion:                 # maximum shNG version to use this plugin (leave empty if latest)
+    multi_instance: False          # plugin supports multi instance
+    classname: 'S7 '                # class containing the plugin
+
+parameters:
+    # Definition of parameters to be configured in etc/plugin.yaml
+    host: 
+        de: 'IP Adresse der SPS '
+        en: 'IP Adress of the PLC you would connect'
+    port: 
+        de: '102'
+        en: '102'
+    busmonitor: 
+        de: 'True/False'
+        en: 'True/False'
+    read_cyl_fast: 
+        de: '3'
+        en: '3'   
+    read_cyl_slow:
+        de: '15'
+        en: '15'
+    rack:
+        de: '0 für s7-1200, Entspricht dem Racksteckplatz der CPU im TIA Portal'
+        en: '0 for s7-1200, the number of the CPU on the Rack'
+    slot:
+        de: '1 für s7-1200, Entspricht dem Slot der CPU im TIA Portal'
+        en: '1 for s7-1200, the Slot of the CPU on the Rack'
+item_attributes:
+    # Definition of item attributes defined by this plugin
+    
+    s7_dpt:
+        'This attribute is mandatory. If you don't provide one the item will be ignored.
+        The DPT has to match the type of the item!'
+        #+--------+---------+------+----------------------------------+
+        #| DPT    | Data    | Type | Values                           |
+        #+========+=========+======+==================================+
+        #| 1      | 1 bit   | bool | False | True   0 | 1             |
+        #+--------+---------+------+----------------------------------+
+        #| 5      | 2 byte  | num  | 0 - 255                          |
+        #+--------+---------+------+----------------------------------+
+        #| 6      | 4 byte  | num  | 4-Octet Float Value IEEE 754     |
+        #+--------+---------+------+----------------------------------+
+
+    s7_send:
+        'You could specify one or more group addresses to send updates to. Item update will only be sent if the item is not changed.'
+    s7_read_s:
+        'You could specify one or more group addresses to monitor for changes. cycle slow'
+    s7_read_f:
+        'You could specify one or more group addresses to monitor for changes. cycle fast'
+#Example
+#
+#[living_room]
+#
+#
+#### bit/bool  = DB42.dbx1.1
+#
+#
+#    [[light]]
+#        type = bool
+#        visu_acl = rw
+#        s7_dpt = 1
+#        s7_send = 42/1/1
+#        s7_read_f = 42/1/1
+#
+#
+#
+#
+####  Dezimalzahl = int   = DB42.dbw4
+#
+#
+#    [[temperature_act]]
+#        type = num
+#        visu_acl = rw
+#   	 sqlite = yes
+#        s7_dpt = 5
+#        s7_send = 42/4
+#        s7_read_s = 42/4       / slow read cycle
+#
+#
+#
+#
+####  Gleitpunktzahl = real  = DB42.dbd6
+#
+#
+#    [[temperature_set]]
+#        type = num
+#        visu_acl = rw
+#   	 sqlite = yes
+#        s7_dpt = 6
+#        s7_send = 42/6
+#        s7_read_f = 42/6      / fast read cycle
+#
+#
+#
+#
+#
+#
+###################################################################################################

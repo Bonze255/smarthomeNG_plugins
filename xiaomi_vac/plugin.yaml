@@ -1,0 +1,31 @@
+# Metadata for the Xiaomi Saugroboter
+plugin:
+    # Global plugin attributes
+    type: gateway                  # plugin type (gateway, interface, protocol, system, web)
+    description:                  # Alternative: description in multiple languages
+        de: 'Zugriff auf Xiaomi Saugroboter'
+        en: ''
+    #maintainer: 'Bonze'
+    #tester: Bonze
+    keywords: communication
+#    documentation: 
+
+    version: 0.0.1              # Plugin version
+    sh_minversion: 1.5           # minimum shNG version to use this plugin
+    multi_instance: False          # plugin supports multi instance
+    classname: Robvac                # class containing the plugin
+
+# Definition of parameters to be configured in etc/plugin.yaml
+# parameters:
+    # ip: 
+        # de: 'IP Adresse des Roboters '
+        # en: 'IP Adress of the Vakuum'
+    # port: 
+        # de: '102'
+        # en: '102'
+    # busmonitor: 
+        # de: 'True/False'
+        # en: 'True/False'
+    # read_cyl_: 
+        # de: '10'
+        # en: '10'   
