@@ -157,8 +157,10 @@ class Robvac(SmartPlugin):
     # ----------------------------------------------------------------------------------------------
     def update_item(self, item, caller=None, source=None, dest=None):
         if caller != 'Robvac':
-            if 'robvac' in item.conf:
-                message = item.conf['robvac']
+            #if 'robvac' in item.conf:
+            #    message = item.conf['robvac']
+            if self.has_iattr(item.conf, 'robvac'):
+                message = item.get_iattr_value(item.conf, 'robvac')
                 self.logger.debug("Xiaomi_Robvac: Tu dies und das !{0} , weil item {1} geändert wurde".format(message, item))
                 if message == 'fan_speed':
                     self.vakuum.set_fan_speed(item())
@@ -185,10 +187,10 @@ class Robvac(SmartPlugin):
         
     def stop(self):
         self.alive = False
-
+        
     def parse_item(self, item):
-        if 'robvac' in item.conf:
-            message = item.conf['robvac']
+        if self.has_iattr(item.conf, 'robvac'):
+            message = self.get_iattr_value(item.conf, 'robvac')
             self.logger.debug("Xiaomi_Robvac: {0} keyword {1}".format(item, message))
 
             if not message in self.messages:
@@ -197,7 +199,8 @@ class Robvac(SmartPlugin):
             return self.update_item
 
     def update_item_read(self, item, caller=None, source=None, dest=None):
-        if 'robvac' in item.conf:
-            for message in item.conf['robvac']:  # send status update
+        if self.has_iattr(item.conf, 'robvac'):
+            for message in item.get_iattr_value(item.conf, 'robvac'):
+            #for message in item.conf['robvac']:  # send status update
                 self.logger.debug("Xiaomi_Robvac: update_item_read {0}".format(message))
 
