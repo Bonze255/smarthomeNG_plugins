@@ -46,7 +46,7 @@ class Robvac(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
     PLUGIN_VERSION="0.0.1"
     
-    def __init__(self, smarthome,ip='127.0.0.1', token='', read_cyl=10):
+    def __init__(self, smarthome,ip='127.0.0.1', token='', read_cyl=60):
         self._ip = str(ip)
         self._token = str(token)
         self._sh = smarthome
@@ -60,11 +60,7 @@ class Robvac(SmartPlugin):
         self.retr_count_max = 3
         self.retr_count = 1
         self._connected = False
-        #if self.count_ret <= self.max_ret:
-        #    self.connect()
-        #else:
-         #   self.logger.error("Xiaomi_Robvac: Max Retries of Connection!")
-    #def connect(self):
+
         if self._token == '':
             self.logger.error("Xiaomi_Robvac: No Key for Communication given, Plugin would not start!")
             pass
@@ -107,13 +103,7 @@ class Robvac(SmartPlugin):
         data = {}
         #config
         self._connect()
-        #.filter_verbleibend: value 5 days, 10:08:05 does not match type str. Via Xiaomi Robovac None
-        #Item robo.stundenzaehler.buerste_haupt: value 19:51:55 does not match type str. Via Xiaomi Robovac None
-        #Item robo.stundenzaehler.filter: value 19:51:55 does not match type str. Via Xiaomi Robovac None
-        #Item robo.reinigungszeit: value 1:07:43 does not match type str. Via Xiaomi Robovac None
-        #Item robo.stundenzaehler.buerste_seite: value 19:51:55 does not match type str. Via Xiaomi Robovac None
-        #Item robo.stundenzaehler.buerste_haupt_verbleibend: value 11 days, 16:08:05 does not match type str. Via Xiaomi Robovac None
-        #Item robo.stundenzaehler.buerste_seite_verbleibend: value 7 days, 12:08:05 does not match type str. Via Xiaomi Robovac None
+
         try:
             data['fanspeed'] = self.vakuum.status().fanspeed
             data['serial'] = self.vakuum.serial_number()
@@ -163,7 +153,7 @@ class Robvac(SmartPlugin):
 
         pass
     # ----------------------------------------------------------------------------------------------
-    # Wird aufgerufen wenn sich item  mit robvac ändert!
+    # Befehl senden, wird aufgerufen wenn sich item  mit robvac ändert!
     # ----------------------------------------------------------------------------------------------
     def update_item(self, item, caller=None, source=None, dest=None):
         if caller != 'Robvac':
