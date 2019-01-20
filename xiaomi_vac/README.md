@@ -9,7 +9,7 @@ Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-mii
     class_name: Robvac
     class_path: plugins.xiaomi_vac
     ip: '192.XXX.XXX.XXX'
-    token: 'abc4233234454454546'
+    token: 'euerToken'
     read_cyl: 45
     ```
 
