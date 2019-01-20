@@ -1,5 +1,5 @@
 # Xiaomi Vacuum Robot Plugin for SmarthomeNG
-Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-miio) Bibliothek. DAs Plugin bzw python-miio benötigt den Kommunikationstoken des Roboters. 
+Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-miio) Bibliothek. Das Plugin bzw python-miio benötigt den Kommunikationstoken des Roboters. 
 
 - [Bitte der Installationsanweisung von python-miio folgen](https://python-miio.readthedocs.io/en/latest/discovery.html#installation)
 - anschließend Xiaomi_vac nach smarthomeNG/plugins kopieren
@@ -12,3 +12,10 @@ Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-mii
     token: 'abc4233234454454546'
     read_cyl: 45
     ```
+
+
+Um die Verbindung zu überprüfen, kann in der kOmmandozeile nach der Installation mit 
+```export MIROBO_IP=192.xxx.xxx.xxx
+   export MIROBO_TOKEN=euerToken```
+   
+und anschließendem ```mirobo``` die basics abgefragt werden.
