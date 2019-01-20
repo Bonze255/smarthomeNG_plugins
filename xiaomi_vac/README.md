@@ -12,11 +12,15 @@ Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-mii
     token: 'euerToken'
     read_cyl: 45
     ```
-
-
+    
 Um die Verbindung zu überprüfen, kann in der Kommandozeile nach der Installation mit 
+
 ```export MIROBO_IP=192.xxx.xxx.xxx
    export MIROBO_TOKEN=euerToken
 ```
    
-und anschließendem ```mirobo``` die basics abgefragt werden.
+und anschließendem
+
+```mirobo```
+
+die basics abgefragt werden.
