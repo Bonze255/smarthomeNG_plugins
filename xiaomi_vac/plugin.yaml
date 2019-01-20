@@ -11,7 +11,7 @@ plugin:
 #    documentation: 
 
     version: 0.0.1              # Plugin version
-    sh_minversion: 1.5           # minimum shNG version to use this plugin
+    sh_minversion: 1.4           # minimum shNG version to use this plugin
     multi_instance: False          # plugin supports multi instance
     classname: Robvac                # class containing the plugin
 
@@ -20,12 +20,7 @@ plugin:
     # ip: 
         # de: 'IP Adresse des Roboters '
         # en: 'IP Adress of the Vakuum'
-    # port: 
-        # de: '102'
-        # en: '102'
-    # busmonitor: 
-        # de: 'True/False'
-        # en: 'True/False'
+
     # read_cyl_: 
         # de: '10'
         # en: '10'   
