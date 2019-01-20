@@ -14,8 +14,9 @@ Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-mii
     ```
 
 
-Um die Verbindung zu überprüfen, kann in der kOmmandozeile nach der Installation mit 
+Um die Verbindung zu überprüfen, kann in der Kommandozeile nach der Installation mit 
 ```export MIROBO_IP=192.xxx.xxx.xxx
-   export MIROBO_TOKEN=euerToken```
+   export MIROBO_TOKEN=euerToken
+```
    
 und anschließendem ```mirobo``` die basics abgefragt werden.
