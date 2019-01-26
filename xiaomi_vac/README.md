@@ -24,3 +24,23 @@ Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-mii
 ```mirobo```
 
     die basics abgefragt werden.
+
+
+##Funktionen
+
+folgende Werte/Funktionen können vom Saugroboter ausgelesen bzw. gestartet werden:
+- Start
+- Stop/ zur Ladestation fahren
+- Pause
+- Finden
+- Spotreinigung
+- Lüftergesschwindigkeit ändern
+- Lautstärke ansage ändern
+
+- gerenigte Fläche
+- Reinigungszeit
+- Status
+- Zustand
+- Fehlercode
+
+uvm.
