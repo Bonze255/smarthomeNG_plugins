@@ -26,7 +26,7 @@ Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-mii
     die basics abgefragt werden.
 
 
-##Funktionen
+## Funktionen
 
 folgende Werte/Funktionen können vom Saugroboter ausgelesen bzw. gestartet werden:
 - Start
