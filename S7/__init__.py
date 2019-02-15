@@ -13,6 +13,7 @@
 #   - Anpassung an SmartPlugin
 #   - Geschwindigkeit optimiert, Code aufgeräumt
 #   - Benutzung der snap7-python eigenen Methoden
+#   - Reduzierung auf 1 Scheduler
 ####################################################################################
 #
 #  This Plugin is free software: you can redistribute it and/or modify
@@ -53,16 +54,13 @@ class S7(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
     PLUGIN_VERSION="1.0.0"
     
-    def __init__(self, smarthome, time_ga=None, date_ga=None, read_cyl_fast=1, read_cyl_slow=10, busmonitor=False, host='127.0.0.1', port=102, rack=0, slot=0):
+    def __init__(self, smarthome, time_ga=None, date_ga=None, read_cyl=1, busmonitor=False, host='127.0.0.1', port=102, rack=0, slot=0):
         self._host = str(host)
         self._rack = int(rack)
         self._slot = int(slot)
         self._port = int(port)
         self._sh = smarthome
         self.gal = {}
-        self.gar = {}
-        self._init_ga = []
-        self._cache_ga = []
         self.time_ga = time_ga
         self.date_ga = date_ga
         self.types = {'I':'PE','Q':'PA','M':'MK','C':'CT','T':'TM'}
@@ -98,151 +96,14 @@ class S7(SmartPlugin):
 
         self._lock = threading.Lock()
 
-        if read_cyl_fast:
-            self._sh.scheduler.add('S7 read cycle fast', self._read, prio=5, cycle=int(read_cyl_fast))
-
-        if read_cyl_slow:
-            self._sh.scheduler.add('S7 read cycle slow', self._read, prio=5, cycle=int(read_cyl_slow))
+        if read_cyl:
+            self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=int(read_cyl))
 
     # ----------------------------------------------------------------------------------------------
     # Daten schreiben, über SHNG bei item_Change
     # ----------------------------------------------------------------------------------------------
-    def groupwrite(self, ga, payload, dpt):
-        #self.logger.debug("_____________________________________________________________")
-        self.logger.debug("S7: GROUPWRITE ! ga {0}, payload:{1}, dpt:{2}".format(ga,str(payload),dpt))
- 
-        #split ga in area +ga
-        if '|' in ga:
-            type, dst = ga.split('|')
-            if type[0] in self.types.keys():
-                area = self.types[type[0]]
-        else:
-            area = 'DB'
-            
-        ret_s7_num = re.findall(r'\d+', ga)
-        self.logger.debug("S7: WRITE ga {0}, area: {1}, payload:{1}, dpt:{2}".format(ret_s7_num,area,payload, dpt))
-        
-        try:
-            if dpt == '1':
-                self.logger.debug("S7: Schreibe Bool")
-                ret_val = self.client.read_area(areas[area], int(ret_s7_num[0]), int(ret_s7_num[1]), 1)
-                snap7.util.set_bool(ret_val, 0, int(ret_s7_num[2]), payload)                  #modifie bit in 0. byte of bytearray        
-                self.client.write_area(areas[area],int(ret_s7_num[0]), int(ret_s7_num[1]), ret_val)         #Schreibe DB / Ab / Byte
-            elif dpt == '5':
-                self.logger.debug("S7: Schreibe Dezimalzahl")
-                if payload < 32768 and payload > -32767:
-                    if area == 'DB':
-                        ret_val = self.client.read_area(areas[area], int(ret_s7_num[0]), int(ret_s7_num[1]), 2)
-                        #set payload to the bytearray
-                        snap7.util.set_int(ret_val, 0, payload)                                   #set byte in 0. byte of bytearray
-                    
-                        self.logger.debug("S7: schreibe den Wert {0} an {3} {1}\{2}".format(payload, int(ret_s7_num[0]),int(ret_s7_num[1]), area ))
-                        self.client.write_area(areas[area],int(ret_s7_num[0]), int(ret_s7_num[1]), ret_val)         #Schreibe DB / Ab / Byte
-                    else:
-                        ret_val = self.client.read_area(areas[area],0, int(ret_s7_num[0]), 2)
-                        #set payload to the bytearray
-                        snap7.util.set_int(ret_val, 0, payload)                                   #set byte in 0. byte of bytearray
-                    
-                        self.logger.debug("S7: schreibe den Wert {0} an {2} {1}".format(payload, int(ret_s7_num[0]),area) )
-                        self.client.write_area(areas[area],0, int(ret_s7_num[0]), ret_val)         #Schreibe DB / Ab / Byte
-                else:
-                    self.logger.error("S7: Could not write {0}, Payload bigger than 2 Bytes! (-32767<payload<32768)".format(payload))
-                    
-            elif dpt == '6':
-                self.logger.debug("S7: Schreibe Gleitzahl")
-                ##payload to dpt
-                ret_val = self.client.db_read(int(ret_s7_num[0]), int(ret_s7_num[1]), 4)
-                snap7.util.set_real(ret_val, 0, payload)
-                self.client.db_write(int(ret_s7_num[0]), int(ret_s7_num[1]), ret_val)         #Schreibe    DB / Ab / Byte
-
-                
-                # Schreibe String
-        except Snap7Exception as e:
-            self.logger.error("S7: Error writing {0} to {1} with function {3} {4}".format(payload,ret_s7_num, area, e))
-        finally:
-            self.logger.debug("_____________________________________________________________")
-    # ----------------------------------------------------------------------------------------------
-    # Daten Lesen, über SHNG bei item_Change
-    # ----------------------------------------------------------------------------------------------
-    # def groupread(self, ga, dpt):
-        # self.logger.debug("S7: Groupread while item is changed, ga:{0}, dpt:{1}".format(ga, dpt))
-
-        # val = 0 				#Item-Value
-        # src = ga				#Source-Item      (Quell-Adresse)
-       
-        # if '|' in ga:
-            # type, ga = ga.split('|')
-            # if type[0] in self.types.keys():
-                # area = self.types[type[0]]
-                # dbnum = 0
-            # else:
-                # self.logger.warning("S7: This {0} is not a valid Area!".format(type[0]))
-        # else:
-            # area = 'DB'
-            
-        # ret_s7_num = re.findall(r'\d+', ga)
-
-        # self.logger.debug("S7: Datenpunkt: {0}, Lesetyp {1} ".format(dpt, area))
-        
-        # try:
-                # if dpt == '1':
-                    # #Initialisiere Bool
-                    # ret_val = self.client.read_area(areas[area], int(ret_s7_num[0]), int(ret_s7_num[1]), 1)
-                    # val = snap7.util.get_bool(ret_val, 0, int(ret_s7_num[2]))                     #Lese    Value aus Byte / Adresse 
-                    # self.logger.debug("S7: Result read one bit {0} (bool) from {1}{2}".format(val,area, ret_s7_num))
-                
-                # elif dpt == '5':
-                    # #Initialisiere Dezimalzahl
-                    # self.logger.debug("S7: Initialisiere Dezimalzahl")
-                    # self.logger.debug("S7: Read one byte from {1}{2}".format(area, ret_s7_num))
-                    
-                    # if area == 'DB':
-                        # self.logger.debug("S7: DB Adresse {0} / {1}".format(ret_s7_num[0], ret_s7_num[1]))
-                        # result = self.client.read_area(areas[area], int(ret_s7_num[0]), int(ret_s7_num[1]), 2) #Lese    2 DB / Ab / Byte    
-                    # else:
-                        # self.logger.debug("S7: Adresse {0} / {1} / {2}".format(ret_s7_num[0],dpt, area))
-                        # result = self.client.read_area(areas[area], 0, int(ret_s7_num[0]), 2) #Lese    2 DB / Ab / Byte    
-                    # val = snap7.util.get_int(result, 0)
-                    # self.logger.debug("S7: result{0}".format(val))
-                    # self.logger.debug("S7: Result read one byte (int)  {0} from {1}".format(val,ret_s7_num))
-                    
-                # elif dpt == '6':
-                    # #Initialisiere Gleitzahl
-                    # self.logger.debug("S7: Initialisiere Gleitzahl")
-                    # self.logger.debug("S7: Adresse {0}/ {1}".format(ret_s7_num[0], ret_s7_num[1]))
-                    
-                    # if area == "DB":
-                        # result = self.client.read_area(areas[area],int(ret_s7_num[0]), int(ret_s7_num[1]), 4)       #Lese    DB / Ab / Byte    
-                    # else:
-                        # self.logger.debug("S7: gleitzahl lesen 4 byte{0} {1}".format(int(ret_s7_num[0])))
-                        # result = self.client.read_area(areas[area], int(ret_s7_num[0]), 4)       #Lese    DB / Ab / Byte    
-                        # self.logger.debug("S7: {0}".format(result))
-                    # val = snap7.util.get_real(result, 0)
-
-                    # self.logger.debug("S7: Result read one word (real) {0} from {1}".format(val,ret_s7_num))
-                
-                # item(val, 'S7', src, ga)
-                # self.logger.debug("S7: Set {3} with ga {2} ans source {1} to {0}".format(val,src,ga, item))
-                
-        # except Snap7Exception as e:
-            # self.logger.warning("S7: Could not read {0} / {1} / {2} because {3}".format(src,ga, item,e))
-        # finally:
-            # self.logger.debug("_____________________________________________________________")
-    # ----------------------------------------------------------------------------------------------
-    # Daten Lesen, zyklisch
-    # ----------------------------------------------------------------------------------------------     
-    def _read(self):
-        for ga in self._init_ga:
-            #self.logger.debug("_____________________________________________________________")
-            self.logger.debug("S7: Daten lesen Zyklisch")
-            self.logger.debug("S7: Adresse: " +  ga)
-            val = 0 			                #Item-Value
-            src = ga			                #Source-Item      (Quell-Adresse)
-            dst = ga 			                #Destination-Item (Ziel-Adresse)
-     
-            try:
-                for item in self.gal[dst]['items']:
-                    ##############################################################################
+    def groupwrite(self, ga, item, dpt):
+          ##############################################################################
                     #dst = \3     == db
                     #dst = \x\2   == byte
                     #dst = \x\x\3 == bit in byte
@@ -251,65 +112,78 @@ class S7(SmartPlugin):
                     #                x = M => Merker
                     #                x = T => Timer
                     #                x = C => Counter
-                    #############################################################################
-                    if '|' in dst:
-                        type, dst = dst.split('|')
-                        if type[0] in self.types.keys():
-                            area = self.types[type[0]]
-                    else:
-                        area = 'DB'
-                    ret_s7_num = re.findall(r'\d+', dst)
-
-                    dpt = item.conf['s7_dpt']
-
-                    self.logger.debug("S7: Datenpunkt: {0}, function {1}, Destination {2} ".format(dpt, area, ret_s7_num))
-
-                    if dpt == '1':
-                        #Initialisiere Bool
-                        #self.logger.debug("Initialisiere Bool")
-                        # good ret_val = self.client.as_db_read(int(ret_s7_num[0]), int(ret_s7_num[1]), 1)      #Lese    1 DB / Ab / Byte
-                        ret_val = self.client.read_area(areas[area], int(ret_s7_num[0]), int(ret_s7_num[1]), 1)
-                        val = snap7.util.get_bool(ret_val, 0, int(ret_s7_num[2]))                     #Lese    Value aus Byte / Adresse 
-                        self.logger.debug("S7: Result read one bit {0} (bool) from {1}".format(val,ret_s7_num))
+        #############################################################################
+        payload = item()        
+        s7area, dbnum, byte, bit = self.split_ga(ga)
+        self.logger.debug("S7: WRITE payload {0},from area: {1} and adress{2}, dpt:{3} from itemid{3}".format(payload,s7area, [dbnum, byte, bit], dpt, item.id()))
+        
+        try:
+            if dpt == '1':              #Schreibe Bool
+                #read_area(area, dbnumber, start, size)
+                size = 1
+                self.write_data(s7area, dbnum, byte, bit, size, payload )
+            elif dpt == '5':            #Schreibe Dezimalzahl
+                #set_int(_bytearray, byte_index, _int)
+                size = 2
+                if payload < 32768 and payload > -32767:
+                    self.write_data(s7area, dbnum, byte, bit, size, payload)
+                else:
+                    self.logger.error("S7: Could not write {0}, Payload bigger than 2 Bytes! (-32767<payload<32768)".format(payload))
                     
-                    elif dpt == '5':
-                        #Initialisiere Dezimalzahl
-                        self.logger.debug("S7: Initialisiere Dezimalzahl")
-                        
-                        if area =="DB":
-                            self.logger.debug("S7: Adresse {0}/ {1}".format(ret_s7_num[0], ret_s7_num[1]))
-                            result = self.client.read_area(areas[area], int(ret_s7_num[0]), int(ret_s7_num[1]), 2) #Lese    2 DB / Ab / Byte    
-                        else:
-                            self.logger.debug("S7: {0} {1} {2}".format(ret_s7_num[0], dpt, area))
-                            self.logger.debug("S7: dezimalzahl lesen 2 byte{0}".format(int(ret_s7_num[0])))
-                            result = self.client.read_area(areas[area],0, int(ret_s7_num[0]), 2)       #Lese    DB / Ab / Byte    
-                            self.logger.debug("S7: LEseergebnis Dezimalzahl dpt5 {0}".format(result))
-                        val = snap7.util.get_int(result, 0)
-                        self.logger.debug("S7: Result read one byte (int)  {0} from {1}".format(val,ret_s7_num))
-                        
-                    elif dpt == '6':
-                        #Initialisiere Gleitzahl
-                        self.logger.debug("S7: Initialisiere Gleitzahl")
-                        if area == 'DB':
-                            result = self.client.read_area(areas[area],int(ret_s7_num[0]), int(ret_s7_num[1]), 4)       #Lese    DB / Ab / Byte    
-                        else:
-                            self.logger.debug("S7: gleitzahl lesen 4 byte{0} {1} {2}".format(area, ret_s7_num[0], dst ))
-                            result = self.client.read_area(areas[area], 0, int(ret_s7_num[0]), 4)       #Lese    DB / Ab / Byte    
-                            self.logger.debug("S7: {0}".format(result))
-                        val = snap7.util.get_real(result, 0)
-                        self.logger.debug("S7: Result read one word (real) {0} from {1}".format(val,ret_s7_num))
-                    elif dpt == '16':
-                        #Initialisiere Gleitzahl
-                        self.logger.debug("S7: Initialisiere String")
-                        result = self.client.read_area(areas[area], 0, int(ret_s7_num[0]), 4)       #Lese    DB / Ab / Byte    
-                        self.logger.debug("S7: {0}".format(result))
-                    item(val, 'S7', src, ga)
-                    self.logger.debug("S7: Set {3} with ga {2} ans source {1} to {0}".format(val,src,ga, item))
+            elif dpt == '6':            #Schreibe Gleitzahl
+                #set_real(_bytearray, byte_index, real)
+                size = 4
+                self.write_data(s7area, dbnum, byte, bit, size, payload )
+            
+            self.logger.debug("S7: schreibe den Wert {0} an area {2} {1}".format(payload, [dbnum, byte, bit] ,s7area) )    
+                
+        except Snap7Exception as e:
+            self.logger.error("S7: Error writing {0} to {1} with function {2} {3}".format(payload,[dbnum, byte, bit],s7area, e))
+
+    # ----------------------------------------------------------------------------------------------
+    # Daten Lesen, zyklisch
+    # ----------------------------------------------------------------------------------------------     
+    def _read(self):
+        #for ga in self._init_ga:
+            #val = 0 			                #Item-Value
+        #    src = ga			                #Source-Item      (Quell-Adresse)
+        #    dst = ga 			                #Destination-Item (Ziel-Adresse)
+            
+            
+            
+        try:
+            #for item in self.gal[dst]['items']:
+            for ga in self.gal:             #self.gal[ga] = {'dpt': dpt, 'item': item}
+                dpt = self.gal[ga]['dpt']
+                item = self.gal[ga]['item']
+                s7area, dbnum, byte, bit = self.split_ga(ga)
+                dpt = item.conf['s7_dpt']
+                #payload = item()
+                
+                #self.logger.debug("S7: Read Value from Dpt: {0},area {1},ga  {2} ".format(dpt, s7area, [dbnum, byte, bit]))
+
+                if dpt == '1':              #Lese Bool
+                    size = 1
+                    val = self.read_data(s7area, dbnum, byte, bit, size)
                     
-            except Exception as e:
-                self.logger.warning("S7: Could not read {0} / {1} / {2} because {3}".format(src,ga, item,e))
-            finally:
-                self.logger.debug("_____________________________________________________________")
+                elif dpt == '5':            #Lese Dezimalzahl
+                    
+                    size = 2
+                    val = self.read_data(s7area, dbnum, byte, bit, size)
+                    
+                elif dpt == '6':            #Lese Gleitzahl
+                    size = 4
+                    val = self.read_data(s7area, dbnum, byte, bit, size)
+                    
+                elif dpt == '16':           #Lese String
+                    size = 32
+                
+                item(val, 'S7',[dbnum, byte, bit])
+                self.logger.debug("S7: Read {0} from {1}-{2}, Set value to Item {3} ".format(val,s7area, [dbnum, byte, bit], item() ))
+                
+        except Exception as e:
+            self.logger.warning("S7: Could not read {0} from {1} because {2}".format(item,[dbnum, byte, bit],e))
+
     def run(self):
         self.alive = True
 
@@ -319,89 +193,126 @@ class S7(SmartPlugin):
         self.client.destroy()
 
     def parse_item(self, item):
-        if 's7_dtp' in item.conf:
+        ##############################################################################
+        #dst = \3     == db
+        #dst = \x\2   == byte
+        #dst = \x\x\3 == bit in byte
+        #dst = x|1\2\3 ->x = I => input
+        #                x = X => output  
+        #                x = M => Merker
+        #                x = T => Timer
+        #                x = C => Counter
+        #############################################################################
+        if self.has_iattr(item.conf, 's7_dtp'):
             self.logger.warning("S7: Ignoring {0}: please change s7_dtp to s7_dpt.".format(item))
             return None
-
-        if 's7_dpt' in item.conf:
+        elif self.has_iattr(item.conf, 's7_dpt'):
             dpt = item.conf['s7_dpt']
-            if dpt not in ['1','5','9','14']:
+            if dpt not in ['1','5','6','16']:
                 self.logger.warning("S7: This is not a valid dpt.{0} {1}.".format(item, dpt))
-            
-            #return self.update_item
-        else:
-            return None
+                return None
 
-        if 's7_read_s' in item.conf:
-            ga = item.conf['s7_read_s']
-            if '|' not in ga:
-                self.logger.info("S7: No Function (I,Q, M, C, T) for {} given, using default DB ".format(item))
-            self.logger.debug("S7: {0} listen on and init with {1}".format(item, ga))
-
-            if not ga in self.gal:
-                self.gal[ga] = {'dpt': dpt, 'items': [item], 'logics': []}
-
-            else:
-                if not item in self.gal[ga]['items']:
-                    self.gal[ga]['items'].append(item)
-            self._init_ga.append(ga)
-
-        if 's7_read_f' in item.conf:
-            ga = item.conf['s7_read_f']
-            if '|' not in ga:
-                self.logger.info("S7: No Function (I,Q, M, C, T) for {} given, using default DB ".format(item))
-            self.logger.debug("S7: {0} listen on and init with {1}".format(item, ga))
-
-            if not ga in self.gal:
-                self.gal[ga] = {'dpt': dpt, 'items': [item], 'logics': []}
-
-            else:
-                if not item in self.gal[ga]['items']:
-                    self.gal[ga]['items'].append(item)
-            self._init_ga.append(ga)
-            
-        if 's7_send' in item.conf:
-            if isinstance(item.conf['s7_send'], str):
-                item.conf['s7_send'] = [item.conf['s7_send'], ]
-
-        if's7_send' in item.conf:
-            return self.update_item_send
-        
-        
-        if 's7_listen' in item.conf:
-            s7_listen = item.conf['s7_listen']
-            if isinstance(s7_listen, str):
-                s7_listen = [s7_listen, ]
-            for ga in s7_listen:
-                logger.debug("S7: {0} listen on {1}".format(item, ga))
-
+            if self.has_iattr(item.conf, 's7_read'):
+                ga = item.conf['s7_read']
+                if '|' not in ga:
+                    self.logger.info("S7: No Function (I,Q, M, C, T) for {} given, using default DB ".format(item))
+                self.logger.debug("S7: {0} listen on and init with {1}".format(item, ga))
+                #self._init_ga.append(ga)
+                
                 if not ga in self.gal:
-                    self.gal[ga] = {'dpt': dpt, 'items': [item], 'logics': []}
+                    self.gal[ga] = {'dpt': dpt, 'item': item}
+                return self.update_item_send
 
-                else:
-                    if not item in self.gal[ga]['items']:
-                        self.gal[ga]['items'].append(item)
+            if self.has_iattr(item.conf, 's7_send'):
+                #ga = item.conf['s7_send']
+                return self.update_item_send
 
     def update_item_send(self, item, caller=None, source=None, dest=None):
         if caller != 'S7':
-            if 's7_send' in item.conf:
+            if self.has_iattr(item.conf, 's7_send'):
                 if self.client.get_connected:
-                    for ga in item.conf['s7_send']:
-                        self.groupwrite(ga, item(), item.conf['s7_dpt'])
-                        #self.logger.debug("S7: Schreibe {0} auf {1} {2}".format(item(), ga, item.conf['s7_dpt']))
+                    #for ga in item.conf['s7_send']:
+                        
+                    self.groupwrite(item.conf['s7_send'], item, item.conf['s7_dpt'])
 
-    def update_item_read(self, item, caller=None, source=None, dest=None):
-        if self.client.get_connected:
-            if 's7_status' in item.conf:
-                for ga in item.conf['s7_status']:  # send status update
-                    if ga != dest:
-                        self.groupread(ga, item.conf['s7_dpt'])
-                        #self.logger.debug("S7: Lese {0}".format(ga))
-    
     #1 byte  to 0-100%
     def byte_to_dpt5(_val):
       return round(_val/327.67)
     #gloat to int
     def byte_to_dpt7(_val):
       return int(_val)
+      
+    def split_ga(self, ga):
+        if '|' in ga:
+            type, dst = ga.split('|')
+            if type in self.types.keys():
+                area = self.types[type]
+            else:
+                area = 'DB'
+        else:
+            area = 'DB'
+        s7area = areas[area]
+        
+        #split db\byte\bit    
+        ret_s7_num = re.findall(r'\d+', ga)
+        
+        if area == 'DB': #db = 3  []
+            if len(ret_s7_num) > 2:
+                #dbnum, byte,bit = ret_s7_num
+                dbnum = int(ret_s7_num[0])
+                byte = int(ret_s7_num[1])
+                bit = int(ret_s7_num[2])
+            else:
+                dbnum = int(ret_s7_num[0])
+                byte = int(ret_s7_num[1])
+                bit = 0
+        else:# other only 2 
+            dbnum = 0
+            if len(ret_s7_num) > 1:
+                byte = int(ret_s7_num[0])
+                bit = int(ret_s7_num[1])
+            else:
+                byte = int(ret_s7_num[0])
+                bit = 0
+                
+        self.logger.debug("S7: split_ga {0}".format([s7area, dbnum, byte, bit]))
+        return [s7area, dbnum, byte, bit]
+        
+    def write_data(self, area, db, byte, bit, size, payload):
+        #read_area(area, dbnumber, start, size)
+
+        ret_val = self.client.read_area(area, db, byte, size)
+        #self.logger.debug("S7: Write Funktion read {0}".format(ret_val))
+        #set_bool(_bytearray, byte_index, bool_index, value
+        if size == 1:
+            snap7.util.set_bool(ret_val, 0, bit, payload)
+        elif size == 2:
+        #set_int(_bytearray, byte_index, _int)
+            snap7.util.set_int(ret_val, 0, payload)
+        elif size == 4:
+        #set_real(_bytearray, byte_index, real)
+            snap7.util.set_real(ret_val, 0, payload)
+        
+        #self.logger.debug("S7: Write_data Funktion  {0} on Area {1} with Adress {2}\{3}\{4} ans size {5}".format(payload,area, db, byte, bit, size ))
+        return self.client.write_area(area,db, byte, ret_val)
+
+    def read_data(self, area, db, byte, bit, size):
+        
+        ret_val = self.client.read_area(area, db, byte, size)
+        #self.logger.debug("S7: Write Funktion read {0}".format(ret_val))
+        
+        #set_bool(_bytearray, byte_index, bool_index, value
+        if size == 1:
+            payload = snap7.util.get_bool(ret_val, 0, bit)
+        elif size == 2:
+        
+        #set_int(_bytearray, byte_index, _int)
+            payload = snap7.util.get_int(ret_val, 0)
+        elif size == 4:
+        
+        #set_real(_bytearray, byte_index, real)
+            payload = snap7.util.get_real(ret_val, 0)
+        #self.logger.debug("S7: Read_data Funktion  {0} on Area {1} with Adress {2}\{3}\{4} ans size {5}".format(payload,area, db, byte, bit, size ))
+      
+        return payload
     
