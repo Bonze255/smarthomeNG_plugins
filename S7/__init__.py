@@ -80,25 +80,45 @@ class S7(SmartPlugin):
 
         
 
+        # try:
+            # self.client.connect(self._host, self._rack, self._slot, self._port)
+        # except Snap7Exception:
+             # self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
+        # finally:
+            # if self.client.get_connected():
+                # self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_state()))
+                # #self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_info()))
+            # else:
+                # try:
+                    # self.client.connect(self._host, self._rack, self._slot, self._port)
+                # except Snap7Exception:
+                    # self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
+        self.connect()
+        self._lock = threading.Lock()
+
+        if read_cyl:
+            self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=int(read_cyl))
+    
+    # ----------------------------------------------------------------------------------------------
+    # Conect to PLC
+    # ----------------------------------------------------------------------------------------------
+    def connect(self):
         try:
             self.client.connect(self._host, self._rack, self._slot, self._port)
+            
         except Snap7Exception:
              self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
         finally:
             if self.client.get_connected():
                 self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_state()))
                 #self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_info()))
+                return True
             else:
                 try:
                     self.client.connect(self._host, self._rack, self._slot, self._port)
                 except Snap7Exception:
                     self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
-
-        self._lock = threading.Lock()
-
-        if read_cyl:
-            self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=int(read_cyl))
-
+        
     # ----------------------------------------------------------------------------------------------
     # Daten schreiben, über SHNG bei item_Change
     # ----------------------------------------------------------------------------------------------
@@ -139,6 +159,9 @@ class S7(SmartPlugin):
                 
         except Snap7Exception as e:
             self.logger.error("S7: Error writing {0} to {1} with function {2} {3}".format(payload,[dbnum, byte, bit],s7area, e))
+            if not self.client.get_connected():
+                self.logger.error("S7: Not connected! -> connecting".format())
+                self.connect()
 
     # ----------------------------------------------------------------------------------------------
     # Daten Lesen, zyklisch
@@ -148,9 +171,9 @@ class S7(SmartPlugin):
             #val = 0 			                #Item-Value
         #    src = ga			                #Source-Item      (Quell-Adresse)
         #    dst = ga 			                #Destination-Item (Ziel-Adresse)
+ 
             
-            
-            
+        self._lock.acquire()   
         try:
             #for item in self.gal[dst]['items']:
             for ga in self.gal:             #self.gal[ga] = {'dpt': dpt, 'item': item}
@@ -180,10 +203,14 @@ class S7(SmartPlugin):
                 
                 item(val, 'S7',[dbnum, byte, bit])
                 self.logger.debug("S7: Read {0} from {1}-{2}, Set value to Item {3} ".format(val,s7area, [dbnum, byte, bit], item() ))
-                
+                   
         except Exception as e:
             self.logger.warning("S7: Could not read {0} from {1} because {2}".format(item,[dbnum, byte, bit],e))
-
+            if not self.client.get_connected():
+                self.logger.error("S7: Not connected! -> connecting".format())
+                self.connect()
+        finally:
+            self._lock.release()       
     def run(self):
         self.alive = True
 
@@ -315,4 +342,5 @@ class S7(SmartPlugin):
         #self.logger.debug("S7: Read_data Funktion  {0} on Area {1} with Adress {2}\{3}\{4} ans size {5}".format(payload,area, db, byte, bit, size ))
       
         return payload
+
     
