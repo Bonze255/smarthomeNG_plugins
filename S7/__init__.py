@@ -103,27 +103,29 @@ class S7(SmartPlugin):
     # Conect to PLC
     # ----------------------------------------------------------------------------------------------
     def connect(self):
-        try:
-            self.client.connect(self._host, self._rack, self._slot, self._port)
-            
-        except Snap7Exception:
-             self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
-        finally:
-            if self.client.get_connected():
-                self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_state()))
-                #self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_info()))
-                return True
-            else:
-                try:
-                    self.client.connect(self._host, self._rack, self._slot, self._port)
-                except Snap7Exception:
-                    self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
+        if self.client.get_connected() == False:
+            try:
+                self.client.connect(self._host, self._rack, self._slot, self._port)
+                
+            except Snap7Exception:
+                 self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
+            # finally:
+                # if self.client.get_connected():
+                    # self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_state()))
+                    # #self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_info()))
+                    # return True
+                # else:
+                    # try:
+                        # self.client.connect(self._host, self._rack, self._slot, self._port)
+                    # except Snap7Exception:
+                        # self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
         
     # ----------------------------------------------------------------------------------------------
     # Daten schreiben, über SHNG bei item_Change
     # ----------------------------------------------------------------------------------------------
     def groupwrite(self, ga, item, dpt):
-          ##############################################################################
+        self._lock.acquire()          
+        ##############################################################################
                     #dst = \3     == db
                     #dst = \x\2   == byte
                     #dst = \x\x\3 == bit in byte
@@ -154,15 +156,20 @@ class S7(SmartPlugin):
                 #set_real(_bytearray, byte_index, real)
                 size = 4
                 self.write_data(s7area, dbnum, byte, bit, size, payload )
+            elif dpt == '16':            #Schreibe Gleitzahl
+                #set_real(_bytearray, byte_index, real)
+                size = 32
+                self.write_data(s7area, dbnum, byte, bit, size, payload )
             
             self.logger.debug("S7: schreibe den Wert {0} an area {2} {1}".format(payload, [dbnum, byte, bit] ,s7area) )    
                 
         except Snap7Exception as e:
             self.logger.error("S7: Error writing {0} to {1} with function {2} {3}".format(payload,[dbnum, byte, bit],s7area, e))
-            if not self.client.get_connected():
-                self.logger.error("S7: Not connected! -> connecting".format())
-                self.connect()
-
+            #if not self.client.get_connected():
+            #    self.logger.error("S7: Not connected! -> connecting".format())
+            self.connect()
+        finally:
+            self._lock.release() 
     # ----------------------------------------------------------------------------------------------
     # Daten Lesen, zyklisch
     # ----------------------------------------------------------------------------------------------     
@@ -200,15 +207,16 @@ class S7(SmartPlugin):
                     
                 elif dpt == '16':           #Lese String
                     size = 32
-                
+                    val = self.read_data(s7area, dbnum, byte, bit, size)
+                    
                 item(val, 'S7',[dbnum, byte, bit])
                 self.logger.debug("S7: Read {0} from {1}-{2}, Set value to Item {3} ".format(val,s7area, [dbnum, byte, bit], item() ))
                    
         except Exception as e:
             self.logger.warning("S7: Could not read {0} from {1} because {2}".format(item,[dbnum, byte, bit],e))
-            if not self.client.get_connected():
-                self.logger.error("S7: Not connected! -> connecting".format())
-                self.connect()
+            #if not self.client.get_connected():
+            #    self.logger.error("S7: Not connected! -> connecting".format())
+            self.connect()
         finally:
             self._lock.release()       
     def run(self):
@@ -319,7 +327,10 @@ class S7(SmartPlugin):
         elif size == 4:
         #set_real(_bytearray, byte_index, real)
             snap7.util.set_real(ret_val, 0, payload)
-        
+        elif size == 32:
+            #_bytearray, byte_index, value, max_size)
+            self.logger.debug("S7: Write Funktion read {0}".format([ret_val,payload, size]))
+            snap7.util.set_string(ret_val, 1, str(payload), size)
         #self.logger.debug("S7: Write_data Funktion  {0} on Area {1} with Adress {2}\{3}\{4} ans size {5}".format(payload,area, db, byte, bit, size ))
         return self.client.write_area(area,db, byte, ret_val)
 
@@ -339,6 +350,8 @@ class S7(SmartPlugin):
         
         #set_real(_bytearray, byte_index, real)
             payload = snap7.util.get_real(ret_val, 0)
+        elif size == 32:
+            payload = str(snap7.util.get_string(ret_val, 0, size))
         #self.logger.debug("S7: Read_data Funktion  {0} on Area {1} with Adress {2}\{3}\{4} ans size {5}".format(payload,area, db, byte, bit, size ))
       
         return payload
