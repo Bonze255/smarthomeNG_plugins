@@ -5,6 +5,7 @@ MIt disem Plugin kann die Kommunikation mit Siemens S7 Steuerungen(200/300/1200/
 Erfolgreich getestet wurde bisher: S7-1212C.
 
 Es werden Bit, Byte / Word lesen bzw. schreiben an die Steuerung unterstützt. Dabei kann auf die Prozess Ein- und Ausgänge (PE, PA) sowie auf Datenbausteine (DB), Merker(M), Timer(T) und Zähler(C) zugegriffen werden.
+Hinweis: Bei extrem vielen Items darf der Cycle nicht zu gering gewählt werden.
 
 Das Plugin Unterstützt die Datenpunkte:
 
