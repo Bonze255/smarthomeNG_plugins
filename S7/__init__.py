@@ -103,23 +103,15 @@ class S7(SmartPlugin):
     # Conect to PLC
     # ----------------------------------------------------------------------------------------------
     def connect(self):
-        if self.client.get_connected() == False:
+        if self.client.get_connected() == 0:
             try:
+                #self.client.disconnect()
+                #self.client.destroy()
                 self.client.connect(self._host, self._rack, self._slot, self._port)
+                self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_state()))
                 
             except Snap7Exception:
                  self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
-            # finally:
-                # if self.client.get_connected():
-                    # self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_state()))
-                    # #self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_info()))
-                    # return True
-                # else:
-                    # try:
-                        # self.client.connect(self._host, self._rack, self._slot, self._port)
-                    # except Snap7Exception:
-                        # self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
-        
     # ----------------------------------------------------------------------------------------------
     # Daten schreiben, über SHNG bei item_Change
     # ----------------------------------------------------------------------------------------------
@@ -343,7 +335,6 @@ class S7(SmartPlugin):
         if size == 1:
             payload = snap7.util.get_bool(ret_val, 0, bit)
         elif size == 2:
-        
         #set_int(_bytearray, byte_index, _int)
             payload = snap7.util.get_int(ret_val, 0)
         elif size == 4:
