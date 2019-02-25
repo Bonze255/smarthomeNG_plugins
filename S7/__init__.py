@@ -66,6 +66,7 @@ class S7(SmartPlugin):
         self.types = {'I':'PE','Q':'PA','M':'MK','C':'CT','T':'TM'}
         self.client = snap7.client.Client()
         self.logger = logging.getLogger(__name__)
+        
         # es gibt nur 3 mögliche datentypen types
         # bool 1   
         # num 1 byte 5/6 0-100 , 0-255
@@ -78,21 +79,6 @@ class S7(SmartPlugin):
         #doppelwort 14  = 32bit
         #string     16  
 
-        
-
-        # try:
-            # self.client.connect(self._host, self._rack, self._slot, self._port)
-        # except Snap7Exception:
-             # self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
-        # finally:
-            # if self.client.get_connected():
-                # self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_state()))
-                # #self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_info()))
-            # else:
-                # try:
-                    # self.client.connect(self._host, self._rack, self._slot, self._port)
-                # except Snap7Exception:
-                    # self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
         self.connect()
         self._lock = threading.Lock()
 
@@ -117,16 +103,7 @@ class S7(SmartPlugin):
     # ----------------------------------------------------------------------------------------------
     def groupwrite(self, ga, item, dpt):
         self._lock.acquire()          
-        ##############################################################################
-                    #dst = \3     == db
-                    #dst = \x\2   == byte
-                    #dst = \x\x\3 == bit in byte
-                    #dst = x|1\2\3 ->x = I => input
-                    #                x = X => output  
-                    #                x = M => Merker
-                    #                x = T => Timer
-                    #                x = C => Counter
-        #############################################################################
+
         payload = item()        
         s7area, dbnum, byte, bit = self.split_ga(ga)
         self.logger.debug("S7: WRITE payload {0},from area: {1} and adress{2}, dpt:{3} from itemid{3}".format(payload,s7area, [dbnum, byte, bit], dpt, item.id()))
@@ -157,8 +134,6 @@ class S7(SmartPlugin):
                 
         except Snap7Exception as e:
             self.logger.error("S7: Error writing {0} to {1} with function {2} {3}".format(payload,[dbnum, byte, bit],s7area, e))
-            #if not self.client.get_connected():
-            #    self.logger.error("S7: Not connected! -> connecting".format())
             self.connect()
         finally:
             self._lock.release() 
