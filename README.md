@@ -18,9 +18,9 @@ Das Modbus-Datenmodell ist einfach strukturiert und unterscheidet 4 Speicherbere
 "
 Funktion    | Register                           | Adresse     |                    |
 ----------- | -----------------------------------| ------------|--------------------|
-mfunction 2 | Discrete Inputs   (Eingangs-Bits)	 | 0 bis 9998  | bitorientiert      |
-mfunction 4 | Input Register    (Eingangs-Worte) | 0 bis 9998  | byteorientiert     |
-mfunction 5 | Coils             (Ausgangs-Bits)	 | 0 bis 9998  | bitorientiert      |      
+mfunction 2 |Discrete Inputs   (Eingangs-Bits)   | 0 bis 9998  | bitorientiert      |
+mfunction 4 |Input Register    (Eingangs-Worte)  | 0 bis 9998  | byteorientiert     |
+mfunction 5 | Coils             (Ausgangs-Bits)  | 0 bis 9998  | bitorientiert      |
 mfunction 6 | Holding Register  (Ausgangs-Worte) | 0 bis 65535 | byteorientiert     |
 
 ## OPCua
