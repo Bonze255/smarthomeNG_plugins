@@ -9,6 +9,12 @@ stellt eine Verbindung über eine Implementierung des Siemens eigenen Protokolls
 ## ModbusTCP 
 nutzt [pymodbus](https://pymodbus.readthedocs.io/en/latest/readme.html) zur Kommunikation mit jeder Art Gerät.
 Getestet wurde die Kommunikation mit einer Siemens S71211C. ModbusRegsieter lt. [Siemens](https://support.industry.siemens.com/cs/document/100633819/wie-werden-bei-einem-modbus-tcp-datenaustausch-die-speicherbereiche-in-der-simatic-s7-1200-s7-1500-und-im-modbus-ger%C3%A4t-adressiert-?dti=0&lc=de-WW)
+Das Modbus-Datenmodell ist einfach strukturiert und unterscheidet 4 Speicherbereiche (Datentypen):
+
+    Coils (Ausgänge - bitorientiert, können gelesen und geschrieben werden)
+    Discrete Inputs (Eingänge - bitorientiert, nur lesbar)
+    Input Register (Eingangsdaten - wortorientiert, nur lesbar)
+    Holding Register (Ausgangsdaten - wortorientiert, können gelesen und geschrieben werden)
 "
 Funktion    | Register                           | Adresse     |                    |
 ----------- | -----------------------------------| ------------|--------------------|
