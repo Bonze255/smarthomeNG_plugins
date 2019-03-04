@@ -10,7 +10,7 @@ stellt eine Verbindung über eine Implementierung des Siemens eigenen Protokolls
 nutzt [pymodbus](https://pymodbus.readthedocs.io/en/latest/readme.html) zur Kommunikation mit jeder Art Gerät.
 Getestet wurde die Kommunikation mit einer Siemens S71211C. ModbusRegsieter lt. [Siemens](https://support.industry.siemens.com/cs/document/100633819/wie-werden-bei-einem-modbus-tcp-datenaustausch-die-speicherbereiche-in-der-simatic-s7-1200-s7-1500-und-im-modbus-ger%C3%A4t-adressiert-?dti=0&lc=de-WW)
 "
-Modbus Funktion | Register | Adresse
+Funktion    | Register                           | Adresse
 ------------|------------------------------------|-------------
 mfunction 2 | Discrete Inputs   (Eingangs-Bits)	 | 0 bis 9998
 mfunction 4 | Input Register    (Eingangs-Worte) | 0 bis 9998
