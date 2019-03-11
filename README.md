@@ -16,6 +16,7 @@ Das Modbus-Datenmodell ist einfach strukturiert und unterscheidet 4 Speicherbere
     Input Register (Eingangsdaten - wortorientiert, nur lesbar)
     Holding Register (Ausgangsdaten - wortorientiert, können gelesen und geschrieben werden)
 "
+getestet wurden Siemens S7-1211C mit byteorder=Endian.Big,wordorder=Endian.Little
 
 Funktion    | Register                           | Adresse     |                    |
 ----------- | ---------------------------------- | ----------- | ------------------ |
