@@ -20,13 +20,13 @@ getestet wurden Siemens S7-1211C mit byteorder=Endian.Big,wordorder=Endian.Littl
 
 Funktion    | Register                           | Adresse     |                    |
 ----------- | ---------------------------------- | ----------- | ------------------ |
-mfunction 2 |Discrete Inputs   (Eingangs-Bits)   | 0 bis 9998  | bitorientiert      |
-mfunction 4 |Input Register    (Eingangs-Worte)  | 0 bis 9998  | byteorientiert     |
+mfunction 2 | Discrete Inputs   (Eingangs-Bits)  | 0 bis 9998  | bitorientiert      |
+mfunction 4 | Input Register    (Eingangs-Worte) | 0 bis 9998  | byteorientiert     |
 mfunction 5 | Coils             (Ausgangs-Bits)  | 0 bis 9998  | bitorientiert      |
 mfunction 6 | Holding Register  (Ausgangs-Worte) | 0 bis 65535 | byteorientiert     |
 
 ## OPCua
-erstellt einen OPCua Server, mit Hilfe eines OPC UA Clients können die Items gelesen und verändert werden.Es basiert auf [freeOPCua](https://github.com/FreeOpcUa)
+erstellt einen OPCua Server, mit Hilfe eines OPC UA Clients wie z.B:  UA-Expert können die Items gelesen und verändert werden. Es basiert auf [freeOPCua](https://github.com/FreeOpcUa)
 
 
 
