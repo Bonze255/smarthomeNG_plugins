@@ -47,8 +47,11 @@ from snap7.snap7types import areas
 from snap7.snap7exceptions import Snap7Exception
 from snap7.snap7types import S7AreaDB, S7WLBit, S7WLByte, S7WLWord, S7WLDWord, S7WLReal, S7DataItem, S7AreaMK
 from snap7.util import *
-import lib.connection
-from lib.model.smartplugin import SmartPlugin
+
+#import lib.connection
+from lib.model.smartplugin import *
+from lib.module import Modules
+from lib.item import Items
 
 class S7(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
@@ -59,6 +62,7 @@ class S7(SmartPlugin):
         self._rack = int(rack)
         self._slot = int(slot)
         self._port = int(port)
+        self._cycle = int(read_cyl)
         self._sh = smarthome
         self.gal = {}
         self.time_ga = time_ga
@@ -66,7 +70,10 @@ class S7(SmartPlugin):
         self.types = {'I':'PE','Q':'PA','M':'MK','C':'CT','T':'TM'}
         self.client = snap7.client.Client()
         self.logger = logging.getLogger(__name__)
-        
+        self.stop_time_read = 0
+        self.start_time_read = 0
+        self.start_time_write = 0
+        self.stop_time_write = 0
         # es gibt nur 3 mögliche datentypen types
         # bool 1   
         # num 1 byte 5/6 0-100 , 0-255
@@ -78,36 +85,44 @@ class S7(SmartPlugin):
         #wort =     9   = 16bit
         #doppelwort 14  = 32bit
         #string     16  
-
+        
+        if not self.init_webinterface():
+            self._init_complete = False
+            
         self.connect()
         self._lock = threading.Lock()
 
         if read_cyl:
-            self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=int(read_cyl))
-    
+            self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=self._cycle)
+        
+
+        
+        return
     # ----------------------------------------------------------------------------------------------
-    # Conect to PLC
+    # Connect to PLC
     # ----------------------------------------------------------------------------------------------
     def connect(self):
-        if self.client.get_connected() == 0:
+        if self.client.get_connected() == False:
             try:
                 #self.client.disconnect()
                 #self.client.destroy()
                 self.client.connect(self._host, self._rack, self._slot, self._port)
-                self.logger.debug("S7: CPU Status: {}".format(self.client.get_cpu_state()))
                 
+                
+                self.logger.debug("S7: CPU Status: {0}".format(self.client.get_cpu_state()))
             except Snap7Exception:
-                 self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
+                self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
+
     # ----------------------------------------------------------------------------------------------
     # Daten schreiben, über SHNG bei item_Change
+    # schreibt 1 item
     # ----------------------------------------------------------------------------------------------
     def groupwrite(self, ga, item, dpt):
-        self._lock.acquire()          
-
         payload = item()        
         s7area, dbnum, byte, bit = self.split_ga(ga)
         self.logger.debug("S7: WRITE payload {0},from area: {1} and adress{2}, dpt:{3} from itemid{3}".format(payload,s7area, [dbnum, byte, bit], dpt, item.id()))
-        
+        self._lock.acquire()
+        self.start_time_write  = time.time()
         try:
             if dpt == '1':              #Schreibe Bool
                 #read_area(area, dbnumber, start, size)
@@ -134,11 +149,15 @@ class S7(SmartPlugin):
                 
         except Snap7Exception as e:
             self.logger.error("S7: Error writing {0} to {1} with function {2} {3}".format(payload,[dbnum, byte, bit],s7area, e))
-            self.connect()
+            if not self.client.get_connected():
+                self.logger.error("S7: Not connected! -> connecting".format())
+                self.connect()
         finally:
-            self._lock.release() 
+            self._lock.release()
+            self.stop_time_write = time.time()            
     # ----------------------------------------------------------------------------------------------
     # Daten Lesen, zyklisch
+    # liest alle s7 items
     # ----------------------------------------------------------------------------------------------     
     def _read(self):
         #for ga in self._init_ga:
@@ -147,10 +166,12 @@ class S7(SmartPlugin):
         #    dst = ga 			                #Destination-Item (Ziel-Adresse)
  
             
-        self._lock.acquire()   
+        self._lock.acquire()
+        self.start_time_read  = time.time()      
         try:
             #for item in self.gal[dst]['items']:
             for ga in self.gal:             #self.gal[ga] = {'dpt': dpt, 'item': item}
+                
                 dpt = self.gal[ga]['dpt']
                 item = self.gal[ga]['item']
                 s7area, dbnum, byte, bit = self.split_ga(ga)
@@ -158,7 +179,7 @@ class S7(SmartPlugin):
                 #payload = item()
                 
                 #self.logger.debug("S7: Read Value from Dpt: {0},area {1},ga  {2} ".format(dpt, s7area, [dbnum, byte, bit]))
-
+               
                 if dpt == '1':              #Lese Bool
                     size = 1
                     val = self.read_data(s7area, dbnum, byte, bit, size)
@@ -175,17 +196,18 @@ class S7(SmartPlugin):
                 elif dpt == '16':           #Lese String
                     size = 32
                     val = self.read_data(s7area, dbnum, byte, bit, size)
-                    
                 item(val, 'S7',[dbnum, byte, bit])
                 self.logger.debug("S7: Read {0} from {1}-{2}, Set value to Item {3} ".format(val,s7area, [dbnum, byte, bit], item() ))
-                   
+                  
         except Exception as e:
             self.logger.warning("S7: Could not read {0} from {1} because {2}".format(item,[dbnum, byte, bit],e))
-            #if not self.client.get_connected():
-            #    self.logger.error("S7: Not connected! -> connecting".format())
-            self.connect()
+            if not self.client.get_connected():
+                self.logger.error("S7: Not connected! -> connecting".format())
+                self.connect()
         finally:
-            self._lock.release()       
+            self._lock.release()
+            self.stop_time_read = time.time()
+            
     def run(self):
         self.alive = True
 
@@ -193,7 +215,8 @@ class S7(SmartPlugin):
         self.alive = False
         self.client.disconnect()
         self.client.destroy()
-
+        self._lock.release()
+        
     def parse_item(self, item):
         ##############################################################################
         #dst = \3     == db
@@ -233,8 +256,7 @@ class S7(SmartPlugin):
         if caller != 'S7':
             if self.has_iattr(item.conf, 's7_send'):
                 if self.client.get_connected:
-                    #for ga in item.conf['s7_send']:
-                        
+                    #for ga in item.conf['s7_send']:    
                     self.groupwrite(item.conf['s7_send'], item, item.conf['s7_dpt'])
 
     #1 byte  to 0-100%
@@ -243,7 +265,10 @@ class S7(SmartPlugin):
     #gloat to int
     def byte_to_dpt7(_val):
       return int(_val)
-      
+    # ----------------------------------------------------------------------------------------------
+    # splitetet die S7 byts/bits
+    # 
+    # ----------------------------------------------------------------------------------------------   
     def split_ga(self, ga):
         if '|' in ga:
             type, dst = ga.split('|')
@@ -279,13 +304,14 @@ class S7(SmartPlugin):
                 
         self.logger.debug("S7: split_ga {0}".format([s7area, dbnum, byte, bit]))
         return [s7area, dbnum, byte, bit]
-        
+    # ----------------------------------------------------------------------------------------------
+    # liest daten, verändert diese und 
+    # schreibt 1 item
+    # ---------------------------------------------------------------------------------------------- 
     def write_data(self, area, db, byte, bit, size, payload):
         #read_area(area, dbnumber, start, size)
-
+        #self._lock.acquire()
         ret_val = self.client.read_area(area, db, byte, size)
-        #self.logger.debug("S7: Write Funktion read {0}".format(ret_val))
-        #set_bool(_bytearray, byte_index, bool_index, value
         if size == 1:
             snap7.util.set_bool(ret_val, 0, bit, payload)
         elif size == 2:
@@ -299,10 +325,14 @@ class S7(SmartPlugin):
             self.logger.debug("S7: Write Funktion read {0}".format([ret_val,payload, size]))
             snap7.util.set_string(ret_val, 1, str(payload), size)
         #self.logger.debug("S7: Write_data Funktion  {0} on Area {1} with Adress {2}\{3}\{4} ans size {5}".format(payload,area, db, byte, bit, size ))
+        #self._lock.release()
         return self.client.write_area(area,db, byte, ret_val)
-
+    # ----------------------------------------------------------------------------------------------
+    # 
+    # liest 1 item
+    # ---------------------------------------------------------------------------------------------- 
     def read_data(self, area, db, byte, bit, size):
-        
+        #self._lock.acquire()
         ret_val = self.client.read_area(area, db, byte, size)
         #self.logger.debug("S7: Write Funktion read {0}".format(ret_val))
         
@@ -319,7 +349,150 @@ class S7(SmartPlugin):
         elif size == 32:
             payload = str(snap7.util.get_string(ret_val, 0, size))
         #self.logger.debug("S7: Read_data Funktion  {0} on Area {1} with Adress {2}\{3}\{4} ans size {5}".format(payload,area, db, byte, bit, size ))
-      
+        #self._lock.release() 
         return payload
+        
+    # ----------------------------------------------------------------------------------------------
+    # Methoden, welche über webif aufgerufen werden
+    # 
+    # ---------------------------------------------------------------------------------------------- 
+    def get_connection_info(self):
+        info = {}
+        info['ip'] = self._host
+        info['port'] = self._port
+        info['rack'] = self._rack
+        info['slot'] = self._slot
+        info['cycle'] = self._cycle
+        if self.client.get_connected():
+            try:
+                info['status'] =  self.client.get_cpu_state()
+            except Exception as e:
+                info['status'] = "Not Connected"
 
+            
+        try:
+            info['info'] = self.client.get_cpu_info()
+        except Exception as e:
+            self.logger.debug("S7: No CPU info, while {}".format(e))
+            info['info'] = ''
+        return info
+        
+    def set_cpu_status(self, status):
+        self.logger.debug("S7: Plugin set status {}".format(status))
+        if status == "stop":
+            #self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=self._cycle)
+            self.client.plc_stop()
+        elif status =="coldstart":
+            #self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=self._cycle)
+            self.client.plc_cold_start()        
+        elif status =="hotstart":
+            #self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=self._cycle)
+            self.client.plc_hot_start()
     
+    def send_cpu_cmd(self, cmd=None):
+        if cmd == 'list_blocks':
+            return self.client.list_blocks()
+    
+    def init_webinterface(self):
+        """"
+        Initialize the web interface for this plugin
+
+        This method is only needed if the plugin is implementing a web interface
+        """
+        try:
+            self.mod_http = Modules.get_instance().get_module(
+                'http')  # try/except to handle running in a core version that does not support modules
+        except:
+            self.mod_http = None
+        if self.mod_http == None:
+            self.logger.error("Plugin '{}': Not initializing the web interface".format(self.get_shortname()))
+            return False
+
+        # set application configuration for cherrypy
+        webif_dir = self.path_join(self.get_plugin_dir(), 'webif')
+        config = {
+            '/': {
+                'tools.staticdir.root': webif_dir,
+            },
+            '/static': {
+                'tools.staticdir.on': True,
+                'tools.staticdir.dir': 'static'
+            }
+        }
+        
+        self.logger.debug("Plugin '{0}': {1}, {2}, {3}, {4}, {5}".format(self.get_shortname(), webif_dir, self.get_shortname(),config,  self.get_classname(), self.get_instance_name()))
+        # Register the web interface as a cherrypy app
+        self.mod_http.register_webif(WebInterface(webif_dir, self),
+                                     self.get_shortname(),
+                                     config,
+                                     self.get_classname(), self.get_instance_name(),
+                                     description='')
+
+        return True
+
+
+# ------------------------------------------
+#    Webinterface of the plugin
+# ------------------------------------------
+
+import cherrypy
+from jinja2 import Environment, FileSystemLoader
+
+class WebInterface(SmartPluginWebIf):
+
+
+    def __init__(self, webif_dir, plugin):
+        """
+        Initialization of instance of class WebInterface
+
+        :param webif_dir: directory where the webinterface of the plugin resides
+        :param plugin: instance of the plugin
+        :type webif_dir: str
+        :type plugin: object
+        """
+        self.logger = logging.getLogger(__name__)
+        self.webif_dir = webif_dir
+        self.plugin = plugin
+        self.tplenv = self.init_template_environment()
+        self.logger.debug("Plugin : Init Webif")
+        self.items = Items.get_instance()
+        
+    @cherrypy.expose
+    def index(self, reload=None):
+        """
+        Build index.html for cherrypy
+        Render the template and return the html file to be delivered to the browser
+        :return: contents of the template after beeing rendered
+        """
+        plgitems = []
+        for item in self.items.return_items():
+            if ('s7_dpt' in item.conf):
+                plgitems.append(item)
+        read_cycle_time = round(self.plugin.stop_time_read - self.plugin.start_time_read, 2) 
+        write_cycle_time = round(self.plugin.stop_time_write - self.plugin.start_time_write, 2) 
+        self.logger.debug("Plugin : Render index Webif")
+        tmpl = self.tplenv.get_template('index.html')
+        return tmpl.render(plugin_shortname=self.plugin.get_shortname(), 
+                            plugin_version=self.plugin.get_version(),
+                            plugin_info=self.plugin.get_info(),
+                            p=self.plugin,
+                            webif_dir = self.webif_dir ,
+                            read_cycle = read_cycle_time,
+                            write_cycle = read_cycle_time,
+                            connection = self.plugin.get_connection_info(),
+                            items=sorted(plgitems, key=lambda k: str.lower(k['_path'])))
+                            
+    @cherrypy.expose
+    def action(self, name=None):
+        self.logger.debug("Plugin {0}: CherryPi Call action {1}".format(self.plugin, name))
+        if name == 'stop':
+            self.plugin.set_cpu_status("stop")
+        elif name == 'warmstart':
+            self.plugin.set_cpu_status("warmstart")
+        elif name == 'coldstart':
+            self.plugin.set_cpu_status("coldstart")
+
+
+    ##cherrypy.engine.subscribe('start', open_page)
+    #cherrypy.tree.mount(AjaxApp(), '/', config=config)
+    #cherrypy.engine.start()

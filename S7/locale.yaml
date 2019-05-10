@@ -1,0 +1,13 @@
+plugin_translations:
+    # Translations for the plugin specially for the web interface
+    'Wert 2':         {'de': '=', 'en': 'Value 2'}
+    'Wert 4':         {'de': '=', 'en': 'Value 4'}
+    'description':         {'de': 'Siemens SPS Plugin', 'en': 'Siemens SPS Plugin'}
+    'SPS Status':         {'de': '=', 'en': 'CPU State'}
+    
+    
+    # Alternative format for translations of longer texts:
+    'Hier kommt der Inhalt des Webinterfaces hin.':
+        de: '='
+        en: 'Here goes the content of the web interface.'
+

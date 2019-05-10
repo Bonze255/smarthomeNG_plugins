@@ -38,20 +38,20 @@ plugin:
 
 # item_attributes:
     # s7_dpt: 'This attribute is mandatory. If you do not provide one the item will be ignored. The DPT has to match the type of the item!\n
-            # +--------+---------+------+----------------------------------+\n
-            # | DPT    | Data    | Type | Values                           |\n
-            # +========+=========+======+==================================+\n
-            # | 1      | 1 bit   | bool | False | True   0 | 1             |\n
-            # +--------+---------+------+----------------------------------+\n
-            # | 5      | 2 byte  | num  | 0 - 255                          |\n
-            # +--------+---------+------+----------------------------------+\n
-            # | 6      | 4 byte  | num  | 4-Octet Float Value IEEE 754     |\n
-            # +--------+---------+------+----------------------------------+\n'
+            # +------------+---------------------+------+----------------------------------+\n
+            # | KNX_DPT    | Modbus Function     | Type | Values                           |\n
+            # +============+=====================+======+==================================+\n
+            # | 1          | 1 bit               | bool | False | True   0 | 1             |\n
+            # +------------+---------------------+------+----------------------------------+\n
+            # | 5          | 2 byte              | num  | 0 - 255                          |\n
+            # +------------+---------------------+------+----------------------------------+\n
+            # | 6          | 4 byte              | num  | 4-Octet Float Value IEEE 754     |\n
+            # +------------+---------------------+------+----------------------------------+\n'
 
-    # s7_send: 'Item update will only be sent if the item is changed.'
-    # s7_read: 'Item will be cycly readed'
+    # s7_send: 'You could specify one or more group addresses to send updates to. Item update will only be sent if the item is not changed.'
+    # s7_recv: 'You could specify one or more group addresses to recive updates from. Item update will only be sent if the item is not changed.'
+    # s7_read: 'You could specify one or more group addresses to monitor for changes.'
 #Example
-#Its possible to read/write I/Q/M/DB/C/T
 #
 #[living_room]
 #
