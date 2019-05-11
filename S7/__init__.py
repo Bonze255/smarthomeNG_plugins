@@ -113,6 +113,8 @@ class S7(SmartPlugin):
                 self.logger.debug("S7: CPU Status: {0}".format(self.client_read.get_cpu_state()))
             except Snap7Exception:
                 self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
+                
+                
         if self.client_write.get_connected() == False:
             try:
                 #self.client_read.disconnect()
@@ -226,6 +228,8 @@ class S7(SmartPlugin):
         self.alive = False
         self.client_read.disconnect()
         self.client_read.destroy()
+        self.client_write.disconnect()
+        self.client_write.destroy()
         self._lock.release()
         
     def parse_item(self, item):
@@ -266,7 +270,7 @@ class S7(SmartPlugin):
     def update_item_send(self, item, caller=None, source=None, dest=None):
         if caller != 'S7':
             if self.has_iattr(item.conf, 's7_send'):
-                if self.client_read.get_connected:
+                if self.client_write.get_connected:
                     #for ga in item.conf['s7_send']:    
                     self.groupwrite(item.conf['s7_send'], item, item.conf['s7_dpt'])
 
