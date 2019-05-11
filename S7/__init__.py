@@ -68,7 +68,8 @@ class S7(SmartPlugin):
         self.time_ga = time_ga
         self.date_ga = date_ga
         self.types = {'I':'PE','Q':'PA','M':'MK','C':'CT','T':'TM'}
-        self.client = snap7.client.Client()
+        self.client_read = snap7.client.Client()
+        self.client_write = snap7.client.Client()
         self.logger = logging.getLogger(__name__)
         self.stop_time_read = 0
         self.start_time_read = 0
@@ -102,14 +103,24 @@ class S7(SmartPlugin):
     # Connect to PLC
     # ----------------------------------------------------------------------------------------------
     def connect(self):
-        if self.client.get_connected() == False:
+        if self.client_read.get_connected() == False:
             try:
-                #self.client.disconnect()
-                #self.client.destroy()
-                self.client.connect(self._host, self._rack, self._slot, self._port)
+                #self.client_read.disconnect()
+                #self.client_read.destroy()
+                self.client_read.connect(self._host, self._rack, self._slot, self._port)
                 
                 
-                self.logger.debug("S7: CPU Status: {0}".format(self.client.get_cpu_state()))
+                self.logger.debug("S7: CPU Status: {0}".format(self.client_read.get_cpu_state()))
+            except Snap7Exception:
+                self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
+        if self.client_write.get_connected() == False:
+            try:
+                #self.client_read.disconnect()
+                #self.client_read.destroy()
+                self.client_write.connect(self._host, self._rack, self._slot, self._port)
+                
+                
+                self.logger.debug("S7: CPU Status: {0}".format(self.client_write.get_cpu_state()))
             except Snap7Exception:
                 self.logger.error("S7: Could not connect to PLC with IP: {}".format(self._host))
 
@@ -149,7 +160,7 @@ class S7(SmartPlugin):
                 
         except Snap7Exception as e:
             self.logger.error("S7: Error writing {0} to {1} with function {2} {3}".format(payload,[dbnum, byte, bit],s7area, e))
-            if not self.client.get_connected():
+            if not self.client_write.get_connected():
                 self.logger.error("S7: Not connected! -> connecting".format())
                 self.connect()
         finally:
@@ -201,7 +212,7 @@ class S7(SmartPlugin):
                   
         except Exception as e:
             self.logger.warning("S7: Could not read {0} from {1} because {2}".format(item,[dbnum, byte, bit],e))
-            if not self.client.get_connected():
+            if not self.client_read.get_connected():
                 self.logger.error("S7: Not connected! -> connecting".format())
                 self.connect()
         finally:
@@ -213,8 +224,8 @@ class S7(SmartPlugin):
 
     def stop(self):
         self.alive = False
-        self.client.disconnect()
-        self.client.destroy()
+        self.client_read.disconnect()
+        self.client_read.destroy()
         self._lock.release()
         
     def parse_item(self, item):
@@ -255,7 +266,7 @@ class S7(SmartPlugin):
     def update_item_send(self, item, caller=None, source=None, dest=None):
         if caller != 'S7':
             if self.has_iattr(item.conf, 's7_send'):
-                if self.client.get_connected:
+                if self.client_read.get_connected:
                     #for ga in item.conf['s7_send']:    
                     self.groupwrite(item.conf['s7_send'], item, item.conf['s7_dpt'])
 
@@ -311,7 +322,7 @@ class S7(SmartPlugin):
     def write_data(self, area, db, byte, bit, size, payload):
         #read_area(area, dbnumber, start, size)
         #self._lock.acquire()
-        ret_val = self.client.read_area(area, db, byte, size)
+        ret_val = self.client_write.read_area(area, db, byte, size)
         if size == 1:
             snap7.util.set_bool(ret_val, 0, bit, payload)
         elif size == 2:
@@ -326,14 +337,14 @@ class S7(SmartPlugin):
             snap7.util.set_string(ret_val, 1, str(payload), size)
         #self.logger.debug("S7: Write_data Funktion  {0} on Area {1} with Adress {2}\{3}\{4} ans size {5}".format(payload,area, db, byte, bit, size ))
         #self._lock.release()
-        return self.client.write_area(area,db, byte, ret_val)
+        return self.client_write.write_area(area,db, byte, ret_val)
     # ----------------------------------------------------------------------------------------------
     # 
     # liest 1 item
     # ---------------------------------------------------------------------------------------------- 
     def read_data(self, area, db, byte, bit, size):
         #self._lock.acquire()
-        ret_val = self.client.read_area(area, db, byte, size)
+        ret_val = self.client_read.read_area(area, db, byte, size)
         #self.logger.debug("S7: Write Funktion read {0}".format(ret_val))
         
         #set_bool(_bytearray, byte_index, bool_index, value
@@ -363,15 +374,15 @@ class S7(SmartPlugin):
         info['rack'] = self._rack
         info['slot'] = self._slot
         info['cycle'] = self._cycle
-        if self.client.get_connected():
+        if self.client_write.get_connected():
             try:
-                info['status'] =  self.client.get_cpu_state()
+                info['status'] =  self.client_read.get_cpu_state()
             except Exception as e:
                 info['status'] = "Not Connected"
 
             
         try:
-            info['info'] = self.client.get_cpu_info()
+            info['info'] = self.client_read.get_cpu_info()
         except Exception as e:
             self.logger.debug("S7: No CPU info, while {}".format(e))
             info['info'] = ''
@@ -381,17 +392,17 @@ class S7(SmartPlugin):
         self.logger.debug("S7: Plugin set status {}".format(status))
         if status == "stop":
             #self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=self._cycle)
-            self.client.plc_stop()
+            self.client_write.plc_stop()
         elif status =="coldstart":
             #self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=self._cycle)
-            self.client.plc_cold_start()        
+            self.client_write.plc_cold_start()        
         elif status =="hotstart":
             #self._sh.scheduler.add('S7 read cycle', self._read, prio=5, cycle=self._cycle)
-            self.client.plc_hot_start()
+            self.client_write.plc_hot_start()
     
     def send_cpu_cmd(self, cmd=None):
         if cmd == 'list_blocks':
-            return self.client.list_blocks()
+            return self.client_read.list_blocks()
     
     def init_webinterface(self):
         """"
