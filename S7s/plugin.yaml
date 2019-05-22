@@ -1,0 +1,89 @@
+# Metadata for the S7 Server  Plugin
+plugin:
+    # Global plugin attributes
+    type: gateway                  # plugin type (gateway, interface, protocol, system, web)
+    description:                  # Alternative: description in multiple languages
+        de: 'Freigabe von Daten für S7 SPSen'
+        en: 'Read Write Data from Siemens Plcs'
+    #maintainer: 'Bonze'
+    #tester: Bonze
+    keywords: communication
+#    documentation: 
+
+    version: 1.0.0              # Plugin version
+    sh_minversion: 1.5           # minimum shNG version to use this plugin
+    multi_instance: False          # plugin supports multi instance
+    classname: S7                # class containing the plugin
+
+# Definition of parameters to be configured in etc/plugin.yaml
+# parameters:
+    # host: 
+        # de: 'IP Adresse der SPS '
+        # en: 'IP Adress of the PLC you would connect'
+    # port: 
+        # de: '102'
+        # en: '102'
+    # busmonitor: 
+        # de: 'True/False'
+        # en: 'True/False'
+    # read_cyl: 
+        # de: '3'
+        # en: '3'   
+    # rack:
+        # de: '0 für s7-1200, Entspricht dem Racksteckplatz der CPU im TIA Portal'
+        # en: '0 for s7-1200, the number of the CPU on the Rack'
+    # slot:
+        # de: '1 für s7-1200, Entspricht dem Slot der CPU im TIA Portal'
+        # en: '1 for s7-1200, the Slot of the CPU on the Rack'
+
+# item_attributes:
+    # s7_dpt: 'This attribute is mandatory. If you do not provide one the item will be ignored. The DPT has to match the type of the item!\n
+            # +------------+---------------------+------+----------------------------------+\n
+            # | KNX_DPT    | Modbus Function     | Type | Values                           |\n
+            # +============+=====================+======+==================================+\n
+            # | 1          | 1 bit               | bool | False | True   0 | 1             |\n
+            # +------------+---------------------+------+----------------------------------+\n
+            # | 5          | 2 byte              | num  | 0 - 255                          |\n
+            # +------------+---------------------+------+----------------------------------+\n
+            # | 6          | 4 byte              | num  | 4-Octet Float Value IEEE 754     |\n
+            # +------------+---------------------+------+----------------------------------+\n'
+
+    # s7_send: 'You could specify one or more group addresses to send updates to. Item update will only be sent if the item is not changed.'
+    # s7_recv: 'You could specify one or more group addresses to recive updates from. Item update will only be sent if the item is not changed.'
+    # s7_read: 'You could specify one or more group addresses to monitor for changes.'
+#Example
+#
+#[living_room]
+#
+#
+#### bit/bool  = DB42.dbx1.1
+#    [[light]]
+#        type = bool
+#        visu_acl = rw
+#        s7_dpt = 1
+#        s7_send = DB|42/1/1
+#        s7_read = 42/1/1
+#	Its the same !
+#
+#
+#
+####  Dezimalzahl = int   = DB42.dbw4
+#    [[temperature_act]]
+#        type = num
+#        visu_acl = rw
+#   	 sqlite = yes
+#        s7_dpt = 5
+#        s7_send = 42/4 => means DB
+#        s7_read = Q|42/4 => means Output!
+#
+
+####  Gleitpunktzahl = real  = DB42.dbd6
+#    [[temperature_set]]
+#        type = num
+#        visu_acl = rw
+#   	 sqlite = yes
+#        s7_dpt = 6
+#        s7_send = 42/6
+#        s7_read = 42/6      / fast read cycle
+#
+###################################################################################################
