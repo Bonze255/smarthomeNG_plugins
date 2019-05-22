@@ -1,4 +1,4 @@
-# S7-Plugin
-S7-Plugin für Smarthome / Smartvisu
-Zur Kommunikation mit Siemens S7 Steuerungen.
-Es werden Bit, Byte und Word lesen bzw. schreiben an die Steuerung unterstützt
+# S7-Server Plugin
+S7-Server Plugin für Smarthome / Smartvisu
+Hiermit wird eine S7 STeuerung simuliert
+Die Daten können aus Items vorgegeben werden.
