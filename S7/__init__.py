@@ -134,7 +134,7 @@ class S7(SmartPlugin):
         payload = item()        
         s7area, dbnum, byte, bit = self.split_ga(ga)
         self.logger.debug("S7: WRITE payload {0},from area: {1} and adress{2}, dpt:{3} from itemid{3}".format(payload,s7area, [dbnum, byte, bit], dpt, item.id()))
-        self._lock.acquire()
+        #self._lock.acquire()
         self.start_time_write  = time.time()
         try:
             if dpt == '1':              #Schreibe Bool
@@ -166,7 +166,7 @@ class S7(SmartPlugin):
                 self.logger.error("S7: Not connected! -> connecting".format())
                 self.connect()
         finally:
-            self._lock.release()
+            #self._lock.release()
             self.stop_time_write = time.time()            
     # ----------------------------------------------------------------------------------------------
     # Daten Lesen, zyklisch
@@ -179,7 +179,7 @@ class S7(SmartPlugin):
         #    dst = ga 			                #Destination-Item (Ziel-Adresse)
  
             
-        self._lock.acquire()
+        #self._lock.acquire()
         self.start_time_read  = time.time()      
         try:
             #for item in self.gal[dst]['items']:
@@ -218,7 +218,7 @@ class S7(SmartPlugin):
                 self.logger.error("S7: Not connected! -> connecting".format())
                 self.connect()
         finally:
-            self._lock.release()
+            #self._lock.release()
             self.stop_time_read = time.time()
             
     def run(self):
