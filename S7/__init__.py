@@ -14,6 +14,8 @@
 #   - Geschwindigkeit optimiert, Code aufgeräumt
 #   - Benutzung der snap7-python eigenen Methoden
 #   - Reduzierung auf 1 Scheduler
+#   - Webif hinzugefuegt
+#   - Plugin komplett neu konzipiert
 ####################################################################################
 #
 #  This Plugin is free software: you can redistribute it and/or modify
