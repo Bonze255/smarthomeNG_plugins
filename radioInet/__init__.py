@@ -153,6 +153,11 @@ class radioinet(SmartPlugin):
           
 
     def sendUDP(self, _command, _payload):
+        """Send Message to the Radio, with given Command and Payload
+        :param _command: 
+        :param _payload:
+        
+        """
         _id = 'shNG'
         self.logger.debug("RadioINet: Send UDP Command {} , Value {}".format(_command, _payload))
         for key in self.keys.keys():
@@ -161,8 +166,8 @@ class radioinet(SmartPlugin):
                self.logger.debug("RadioINet: KEY ",key)
                
                break
-        #_command modifizieren
-        #Status Lautstärke Nachtabsenkung prüfen
+        
+        #Status Item Lautstärke Nachtabsenkung prüfen
         for item in self._sh.items.return_items():
             if self.has_iattr(item.conf, 'radio'):
                 if item.conf['radio'] == 'VOLUME_ABSENKUNG':
@@ -173,6 +178,7 @@ class radioinet(SmartPlugin):
                 if item.conf['radio'] == 'VOLUME_NACHT':
                     vol_nacht = item()
                 break    
+        #_command modifizieren
         if 'CHANNEL' in _command:
             _command = item.conf['radio']
             _command = _command.replace('CHANNEL', 'STATION:')
@@ -184,26 +190,26 @@ class radioinet(SmartPlugin):
         elif _command == 'RADIO_ON' and absenkung == True:
             ##Nachtabsenlung, 
             #Radio einschalten + Lautstärkewert senden! 
-            self.logger.info("RadioINet: Schalte Radio ein mit Nachtabsenkung ")
+            self.logger.debug("RadioINet: RADIO ON, with Volume reduction")
             MESSAGE = "COMMAND:" + key + "\r\n" + _command + "\r\nID:" + _id + "\r\n\r\n"
-            self.logger.info("RadioINet: Send MESSAGE{0}".format(MESSAGE))
+            self.logger.debug("RadioINet: Send MESSAGE{0}".format(MESSAGE))
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
             sock.sendto(MESSAGE.encode(), (self.device, 4244))
             
             _command = 'VOLUME_ABSOLUTE'+str(vol_nacht)
             
         MESSAGE = "COMMAND:" + key + "\r\n" + _command + "\r\nID:" + _id + "\r\n\r\n"
-        self.logger.info("RadioINet: Send MESSAGE{0}".format(MESSAGE))
+        self.logger.debug("RadioINet: Send MESSAGE{0}".format(MESSAGE))
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
         sock.sendto(MESSAGE.encode(), (self.device, 4244))
         sock.close()
             
     def UDPMessageParser(self,_message):
+        """Splits the messagestring to a List
+        :param message: Messagestring
+        """
         message = _message.splitlines()
-        self.logger.debug("RadioInet:COMPLETE MESSAGE",message)
-        message = _message.splitlines()
-        #print("COMPLETE MESSAGE",message)
         if 'NACK' not in message[4]:#and 'SET' not in message[0]:
             payload_list = {}
             request = message[0].split(':')[1] #GET/SET
@@ -211,11 +217,8 @@ class radioinet(SmartPlugin):
             id_key,id_value = message[2].split(':') #shNG
             payload_list[id_key] = id_value
             payload = message[3:len(message)-2]
-            
             response = message[len(message)-2].split(':', 1)[1]
-            #print('#'*25, "DEBUG BLANK\r\n ", message) 
 
-            
             channel = {}
             all_channels ={}
          
@@ -238,10 +241,14 @@ class radioinet(SmartPlugin):
                         payload_list[key]= value
                 
                 self.change_item(payload_list)
-            print("PAYLOAD LIST ",payload_list)
+             self.logger.debug("RadioInet: Recieved PAYLOAD LIST {}".format(payload_list))
 
-    """Sets the Item with radio value to the specific value"""                
+                
     def change_item(self, payload):
+        """
+        Sets the Item with radio value to the specific value
+        :param payload: C
+        """    
         self.logger.debug("RadioInet: change_item/s{0}".format(payload))
         new_value = None
         for payloadkey in payload.keys():
@@ -259,33 +266,34 @@ class radioinet(SmartPlugin):
                             new_value = int(payload[payloadkey])
                             self.logger.debug("RadioInet: VOLUME in payloadkey {0}{1}".format(payloadkey, new_value))
                         else:
-                            
                             new_value = int(payload[payloadkey])
                             self.logger.debug("RadioInet: Sonstiges in payloadkey {0}{1}".format(payloadkey, new_value))
                         item(new_value,'RadioInet')
                         self.logger.debug("RadioInet: Item {0} - {1} changed to {2}".format(item, item(), new_value))
                         break
                         
-
+    
     def UDPServer(self):
+        """
+        Listen for Messages from UDP
+        """
         port = 4242
         ip=''
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Allow incoming broadcasts
         s.setblocking(False) # Set socket to non-blocking mode
-        s.bind(('', port)) #Accept Connections on port
+        s.bind((ip, port)) #Accept Connections on port
         while True:
             try:
                 message, address = s.recvfrom(8192) # Buffer size is 8192. Change as needed.
-                print('message',message)
+                self.logger.debug("RadioINet: Recieved Message from Radio".format(message))
                 self.UDPMessageParser(message.decode("utf-8") )
             except Exception as e:
-                self.logger.info("RadioINet: Cannot connect.",e)
+                self.logger.error("RadioINet: Cannot connect.",e)
                 
     def init_webinterface(self):
         """"
         Initialize the web interface for this plugin
-
         This method is only needed if the plugin is implementing a web interface
         """
         try:
@@ -367,12 +375,3 @@ class WebInterface(SmartPluginWebIf):
                             webif_dir = self.webif_dir ,
                             items=sorted(plgitems, key=lambda k: str.lower(k['_path'])))
                             
-    #@cherrypy.expose
-    #def action(self, name=None):
-    #    self.logger.debug("Plugin {0}: CherryPi Call action {1}".format(self.plugin, name))
-    #    if name == 'stop':
-    #        self.plugin.set_cpu_status("stop")
-    #    elif name == 'warmstart':
-    #        self.plugin.set_cpu_status("warmstart")
-    #    elif name == 'coldstart':
-    #        self.plugin.set_cpu_status("coldstart")
