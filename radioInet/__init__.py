@@ -42,7 +42,7 @@ from lib.item import Items
 
 class radioinet(SmartPlugin):
     """
-    Main class of the Modbus TCP-Plugin. Does all plugin specific stuff and provides
+    Main class of the RadioInet Plugin. Does all plugin specific stuff and provides
     the update functions for the items
     """
     ALLOW_MULTIINSTANCE = False
@@ -77,13 +77,13 @@ class radioinet(SmartPlugin):
         self._sh = smarthome
 
         #Listen
-        self._itemlist = []                 #puffert die benutzen Radio Items
+        self._itemlist = [] #puffert die benutzen Radio Items                
         self.keys ={'GET':['POWER_STATUS', 'INFO_BLOCK','ALARM_STATUS','VOLUME','PLAYING_MODE','ALL_STATIONS_INFO','TUNEIN_PARTNER_ID', 'ENERGY_MODE'],
                     'SET':['RADIO_ON', 'RADIO_OFF', 'VOLUME_ABSOLUTE','VOLUME_INC','VOLUME_DEC','VOLUME_MUTE','VOLUME_UNMUTE','ALARM_OFF','ALARM_SNOOZE','ALARM'],
                     'PLAY':['STATION', 'CHANNEL','UPNP','AUX','TUNEIN_INIT','TUNEIN_PLAY']#,
                     #'SAVE':['STATION', 'TUNEIN_FAVORITE']
                     }
-        #mute = VOlume_ABSolue = -1
+        
         self.data = {}
         self.config = { #enthält die configdaten
             'ah':'08', #alarmzeitstunden 0-23
@@ -179,6 +179,8 @@ class radioinet(SmartPlugin):
                     
         elif _command == 'VOLUME_ABSOLUTE':
             _command = _command +':' + str(_payload)
+        elif _command == 'VOLUME_MUTE':
+            _command = _command +':' + '-1'
         elif _command == 'RADIO_ON' and absenkung == True:
             ##Nachtabsenlung, 
             #Radio einschalten + Lautstärkewert senden! 
