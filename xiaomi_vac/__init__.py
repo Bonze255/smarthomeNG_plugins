@@ -76,13 +76,9 @@ class Robvac(SmartPlugin):
                 for i in range(self.retr_count_max-self.retr_count):
                     try:
                         self.vakuum = miio.Vacuum(self._ip,self._token, 0, 0)
-                        robots = self.vakuum.find()
-                        
-                        self.logger.debug("Xiaomi_Robvac: Found some Robots!{}".format(robots))
                         self.retr_count = 1
                         self._connected = True
                         return True
-                        break
                     except Exception as e:
                         self.logger.error("Xiaomi_Robvac: Error {0}, Cycle {1} ".format(e,self.retr_count))
                         self.retr_count += 1
@@ -114,8 +110,8 @@ class Robvac(SmartPlugin):
             #->2018-12-26  11:10:37 DEBUG    plugins.xiaomi_vac Xiaomi_Robvac: Letze Reinigung Details<CleaningDetails: 2018-11-01 16:18:27 (duration: 0:00:05, done: 
             
             #letzte reinigung
-            #clean_details = self.vakuum.clean_details()
-            #self.logger.debug("Xiaomi_Robvac: Letze Reinigung {0}".format(clean_details))
+            cleaning_details = self.vakuum.cleaning_details()
+            self.logger.debug("Xiaomi_Robvac: Letze Reinigung {0}".format(cleaning_details))
             last_clean_details = self.vakuum.last_clean_details()
             self.logger.debug("Xiaomi_Robvac: Letze Reinigung Details{0}".format(last_clean_details))
             #historische reinigung
@@ -201,6 +197,5 @@ class Robvac(SmartPlugin):
     def update_item_read(self, item, caller=None, source=None, dest=None):
         if self.has_iattr(item.conf, 'robvac'):
             for message in item.get_iattr_value(item.conf, 'robvac'):
-            #for message in item.conf['robvac']:  # send status update
                 self.logger.debug("Xiaomi_Robvac: update_item_read {0}".format(message))
 
