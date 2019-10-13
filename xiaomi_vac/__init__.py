@@ -99,6 +99,8 @@ class Robvac(SmartPlugin):
     # ----------------------------------------------------------------------------------------------
     # Daten Lesen, zyklisch
     # ----------------------------------------------------------------------------------------------     
+
+    
     def _read(self):
         data = {}
         #config
@@ -126,7 +128,7 @@ class Robvac(SmartPlugin):
             #status
             data['batt'] = self.vakuum.status().battery
             data['area'] = self.vakuum.status().clean_area
-            data['cleantime'] = self.vakuum.status().clean_time
+            data['cleantime'] = self.vakuum.status().clean_time.seconds
             data['aktiv'] = self.vakuum.status().is_on #reinigt? 
             data['status'] = self.vakuum.status().state #status charging
             #->2018-12-26  11:10:37 DEBUG    plugins.xiaomi_vac Xiaomi_Robvac: Lese batt 100 area0.0 time 0:00:15 status False stateCharging
@@ -165,7 +167,7 @@ class Robvac(SmartPlugin):
             #if 'robvac' in item.conf:
             #    message = item.conf['robvac']
             if self.has_iattr(item.conf, 'robvac'):
-                message = item.get_iattr_value(item.conf, 'robvac')
+                message = self.get_iattr_value(item.conf, 'robvac')
                 self.logger.debug("Xiaomi_Robvac: Tu dies und das !{0} , weil item {1} geändert wurde".format(message, item))
                 if message == 'fan_speed':
                     self.vakuum.set_fan_speed(item())
