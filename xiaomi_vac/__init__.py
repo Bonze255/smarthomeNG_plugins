@@ -76,9 +76,9 @@ class Robvac(SmartPlugin):
                 for i in range(self.retr_count_max-self.retr_count):
                     try:
                         self.vakuum = miio.Vacuum(self._ip,self._token, 0, 0)
-                        robots = self.vakuum.find()
+                        #robots = self.vakuum.find()
                         
-                        self.logger.debug("Xiaomi_Robvac: Found some Robots!{}".format(robots))
+                        #self.logger.debug("Xiaomi_Robvac: Found some Robots!{}".format(robots))
                         self.retr_count = 1
                         self._connected = True
                         return True
@@ -139,7 +139,12 @@ class Robvac(SmartPlugin):
             data['main_brush_left'] = self.vakuum.consumable_status().main_brush_left
             data['filter'] = self.vakuum.consumable_status().filter
             data['filter_left'] = self.vakuum.consumable_status().filter_left
-            self.logger.debug("Xiaomi_Robvac: buerste seite {0}/{1} Buerste Haupt {2}/{3} filter{4}/{5}".format(data['buerste_seite'], data['buerste_seite'], data['buerste_haupt'], data['buerste_haupt_left'], data['filter,filter_left']))
+            self.logger.debug("Xiaomi_Robvac: buerste seite {0}/{1} Buerste Haupt {2}/{3} filter{4}/{5}".format(data['side_brush'], 
+                                                                                                                data['side_brush_left'], 
+                                                                                                                data['main_brush'], 
+                                                                                                                data['main_brush_left'], 
+                                                                                                                data['filter'], 
+                                                                                                                data['filter_left']))
         except Exception as e:
                 self.logger.error("Xiaomi_Robvac: Error {}".format(e))
                 self._connected = False    
