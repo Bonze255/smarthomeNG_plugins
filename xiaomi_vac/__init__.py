@@ -76,9 +76,9 @@ class Robvac(SmartPlugin):
                 for i in range(self.retr_count_max-self.retr_count):
                     try:
                         self.vakuum = miio.Vacuum(self._ip,self._token, 0, 0)
-                        robots = self.vakuum.find()
+                        #robots = self.vakuum.find()
                         
-                        self.logger.debug("Xiaomi_Robvac: Found some Robots!{}".format(robots))
+                        #self.logger.debug("Xiaomi_Robvac: Found some Robots!{}".format(robots))
                         self.retr_count = 1
                         self._connected = True
                         return True
@@ -99,6 +99,8 @@ class Robvac(SmartPlugin):
     # ----------------------------------------------------------------------------------------------
     # Daten Lesen, zyklisch
     # ----------------------------------------------------------------------------------------------     
+
+    
     def _read(self):
         data = {}
         #config
@@ -112,23 +114,31 @@ class Robvac(SmartPlugin):
             dnd = self.vakuum.dnd_status()
             self.logger.debug("Xiaomi_Robvac: Lese fanspeed {0}, vol {1}, dnd {2}".format(data['fanspeed'], data['vol'], dnd))
             #->2018-12-26  11:10:37 DEBUG    plugins.xiaomi_vac Xiaomi_Robvac: Letze Reinigung Details<CleaningDetails: 2018-11-01 16:18:27 (duration: 0:00:05, done: 
-            
-            #letzte reinigung
-            #clean_details = self.vakuum.clean_details()
-            #self.logger.debug("Xiaomi_Robvac: Letze Reinigung {0}".format(clean_details))
-            last_clean_details = self.vakuum.last_clean_details()
-            self.logger.debug("Xiaomi_Robvac: Letze Reinigung Details{0}".format(last_clean_details))
-            #historische reinigung
+                        #historische reinigung
             clean_history = self.vakuum.clean_history()
             #_>2018-12-26  11:10:37 DEBUG    plugins.xiaomi_vac Xiaomi_Robvac: Histroische daten Reinigung <CleaningSummary: 23 times, total time: 14:01:42, total area: 556.2675, ids: [1545742801, 1545483493, 1545397202, 1544349386, 1544187601, 1543928402, 1543585780, 1543323601, 1542978001, 1542732823, 1542718801, 1542373202, 1542114000, 1541768401, 1541509200, 1541166079, 1541163602, 1541095176, 1541090077, 1541085507]>
-            self.logger.debug("Xiaomi_Robvac: Histroische daten Reinigung {0}".format(clean_history))
-
+            
+            #letzte reinigung
+            clean_details = self.vakuum.clean_details()
+            self.logger.debug("Xiaomi_Robvac: Letze Reinigung {0}".format(clean_details))
+            
+            last_clean_details = self.vakuum.last_clean_details()
+            self.logger.debug("Xiaomi_Robvac: Letze Reinigung Details{0}".format(last_clean_details))
+self.logger.debug("Xiaomi_Robvac: Histroische daten Reinigung {0}".format(clean_history))
+            data['carpetmodestatus'] = self.vakuum.CarpetModeStatus()
+            self.logger.debug("Xiaomi_Robvac: Lese batt {0} area{1} time {2} status {3} state{4}".format(data['carpetmodestatus'].current_high, 
+                                                                                                        data['carpetmodestatus'].current_integral, 
+                                                                                                        data['carpetmodestatus'].current_low,
+                                                                                                        data['carpetmodestatus'].enabled,
+                                                                                                        data['carpetmodestatus'].stall_time))
             #status
             data['batt'] = self.vakuum.status().battery
             data['area'] = self.vakuum.status().clean_area
-            data['cleantime'] = self.vakuum.status().clean_time
+            data['cleantime'] = self.vakuum.status().clean_time.seconds
             data['aktiv'] = self.vakuum.status().is_on #reinigt? 
             data['status'] = self.vakuum.status().state #status charging
+            data['timer'] = self.vakuum.timer()
+            data['timezone'] = self.vakuum.timezone()
             #->2018-12-26  11:10:37 DEBUG    plugins.xiaomi_vac Xiaomi_Robvac: Lese batt 100 area0.0 time 0:00:15 status False stateCharging
             self.logger.debug("Xiaomi_Robvac: Lese batt {0} area{1} time {2} status {3} state{4}".format(data['batt'], data['area'], data['cleantime'], data['status'], data['status']))
             #buerste
@@ -139,7 +149,12 @@ class Robvac(SmartPlugin):
             data['main_brush_left'] = self.vakuum.consumable_status().main_brush_left
             data['filter'] = self.vakuum.consumable_status().filter
             data['filter_left'] = self.vakuum.consumable_status().filter_left
-            self.logger.debug("Xiaomi_Robvac: buerste seite {0}/{1} Buerste Haupt {2}/{3} filter{4}/{5}".format(data['buerste_seite'], data['buerste_seite'], data['buerste_haupt'], data['buerste_haupt_left'], data['filter,filter_left']))
+            self.logger.debug("Xiaomi_Robvac: buerste seite {0}/{1} Buerste Haupt {2}/{3} filter{4}/{5}".format(data['side_brush'], 
+                                                                                                                data['side_brush_left'], 
+                                                                                                                data['main_brush'], 
+                                                                                                                data['main_brush_left'], 
+                                                                                                                data['filter'], 
+                                                                                                                data['filter_left']))
         except Exception as e:
                 self.logger.error("Xiaomi_Robvac: Error {}".format(e))
                 self._connected = False    
@@ -160,7 +175,7 @@ class Robvac(SmartPlugin):
             #if 'robvac' in item.conf:
             #    message = item.conf['robvac']
             if self.has_iattr(item.conf, 'robvac'):
-                message = item.get_iattr_value(item.conf, 'robvac')
+                message = self.get_iattr_value(item.conf, 'robvac')
                 self.logger.debug("Xiaomi_Robvac: Tu dies und das !{0} , weil item {1} geändert wurde".format(message, item))
                 if message == 'fan_speed':
                     self.vakuum.set_fan_speed(item())
