@@ -9,5 +9,6 @@
  * @param a gad/item for status
  */
 {% macro map(id, gad_batt, gad_status) %}
-    <div id="{{ uid(page, id) }}" style="width: 100%; height: 400px;" data-widget="gmaps_map" data-item="{{ gad_batt }}, {{ gad_status}}"></div>
+    <div id="{{ uid(page, id) }}" style="width: 100%; height: 400px;" data-widget="robvac" data-item="{{ gad_status}}">
+    {{ icon.battery('icon2', '', '{{ gad_batt }}') }}</div>
 {% endmacro %}
