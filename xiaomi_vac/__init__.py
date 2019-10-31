@@ -100,8 +100,7 @@ class Robvac(SmartPlugin):
     # Daten Lesen, zyklisch
     # ----------------------------------------------------------------------------------------------     
 
-    
-  def _read(self):
+    def _read(self):
         data = {}
         #config
         self._connect()
