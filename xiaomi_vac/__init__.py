@@ -76,13 +76,9 @@ class Robvac(SmartPlugin):
                 for i in range(self.retr_count_max-self.retr_count):
                     try:
                         self.vakuum = miio.Vacuum(self._ip,self._token, 0, 0)
-                        #robots = self.vakuum.find()
-                        
-                        #self.logger.debug("Xiaomi_Robvac: Found some Robots!{}".format(robots))
                         self.retr_count = 1
                         self._connected = True
                         return True
-                        break
                     except Exception as e:
                         self.logger.error("Xiaomi_Robvac: Error {0}, Cycle {1} ".format(e,self.retr_count))
                         self.retr_count += 1
@@ -100,6 +96,7 @@ class Robvac(SmartPlugin):
     # Daten Lesen, zyklisch
     # ----------------------------------------------------------------------------------------------     
 
+    
     def _read(self):
         data = {}
         #config
@@ -107,12 +104,12 @@ class Robvac(SmartPlugin):
 
         try:
             clean_history = self.vakuum.clean_history()
-            data['clean_count'] =           clean_history.count
-            data['clean_total_area'] =      clean_history.total_area
-            data['clean_total_duration'] =  clean_history.total_duration
+            data['clean_total_count'] =           int(clean_history.count)
+            data['clean_total_area'] =      float(clean_history.total_area)
+            data['clean_total_duration'] =  clean_history.total_duration.seconds
             data['clean_ids'] =             clean_history.ids.sort(reverse = True)
             self.logger.debug("Xiaomi_Robvac: Reingungsstatistik Anzahl {0}, Fläche {1}², Dauer {2}, ids {3}".format(
-                                                                                                            data['clean_count'], 
+                                                                                                            data['clean_total_count'], 
                                                                                                             data['clean_total_area'], 
                                                                                                             data['clean_total_duration'], 
                                                                                                             data['clean_ids']))
@@ -183,12 +180,12 @@ class Robvac(SmartPlugin):
             #consumable_status()
             data['sensor_dirty'] =      self.vakuum.consumable_status().sensor_dirty.seconds
             data['sensor_dirty_left'] = self.vakuum.consumable_status().sensor_dirty_left.seconds
-            data['side_brush'] =        self.vakuum.consumable_status().side_brush
-            data['side_brush_left'] =   self.vakuum.consumable_status().side_brush_left
-            data['main_brush'] =        self.vakuum.consumable_status().main_brush
-            data['main_brush_left'] =   self.vakuum.consumable_status().main_brush_left
-            data['filter'] =            self.vakuum.consumable_status().filter
-            data['filter_left'] =       self.vakuum.consumable_status().filter_left
+            data['side_brush'] =        self.vakuum.consumable_status().side_brush.seconds
+            data['side_brush_left'] =   self.vakuum.consumable_status().side_brush_left.seconds
+            data['main_brush'] =        self.vakuum.consumable_status().main_brush.seconds
+            data['main_brush_left'] =   self.vakuum.consumable_status().main_brush_left.seconds
+            data['filter'] =            self.vakuum.consumable_status().filter.seconds
+            data['filter_left'] =       self.vakuum.consumable_status().filter_left.seconds
             self.logger.debug("Xiaomi_Robvac: buerste seite {0}/{1} Buerste Haupt {2}/{3} filter{4}/{5}".format(data['side_brush'], 
                                                                                                                 data['side_brush_left'], 
                                                                                                                 data['main_brush'], 
@@ -207,6 +204,7 @@ class Robvac(SmartPlugin):
                 item = self.messages[x]
                 item(data[x], 'Xiaomi Robovac')
 
+
     # ----------------------------------------------------------------------------------------------
     # Befehl senden, wird aufgerufen wenn sich item  mit robvac ändert!
     # ----------------------------------------------------------------------------------------------
@@ -216,26 +214,33 @@ class Robvac(SmartPlugin):
             #    message = item.conf['robvac']
             if self.has_iattr(item.conf, 'robvac'):
                 message = self.get_iattr_value(item.conf, 'robvac')
-                self.logger.debug("Xiaomi_Robvac: Tu dies und das !{0} , weil item {1} geändert wurde".format(message, item))
+                self.logger.debug("Xiaomi_Robvac: Tu dies und das !{0} , weil item {1} geändert wurde   ".format(message, item))
                 if message == 'fan_speed':
                     self.vakuum.set_fan_speed(item())
-                    self.logger.debug("Xiaomi_Robvac: Hab {0} geaendert wurde".format(self.vakuum.fan_speed())) 
+                    self.logger.debug("Xiaomi_Robvac: Hab {0} geaendert wurde                       ".format(self.vakuum.fan_speed())) 
                 elif message == 'vol':
                     if item() > 100:
                         vol = 100
                     else:
                         vol = item()
                     self.vakuum.set_sound_volume(vol)
-                elif message == 'start':
+                elif message == 'set_start':
                     self.vakuum.start()
-                elif message == 'stop':
+                elif message == 'set_stop':
                     self.vakuum.home()
-                elif message == "pause":
+                elif message == "set_pause":
                     self.vakuum.pause()
-                elif message == "spot":
+                elif message == "set_spot":
                     self.vakuum.spot()
-                elif message == "find":
+                elif message == "set_find":
                     self.vakuum.find()
+                elif message == "reset_filtertimer":
+                    self.vakuum.reset_consumable()
+                elif message == "disable_dnd":
+                    self.vakuum.disable_dnd()
+                elif message == "set_dnd":
+                #start_hr, start_min, end_hr, end_min
+                    self.vakuum.set_dnd(item()[0], item()[1],item()[2], item()[3])
     def run(self):
         self.alive = True
         self.logger.debug("Xiaomi_Robvac: Found items{}".format(self.messages))
