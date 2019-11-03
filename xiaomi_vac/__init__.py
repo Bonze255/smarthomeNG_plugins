@@ -156,7 +156,7 @@ class Robvac(SmartPlugin):
             
             data['fanspeed'] =  self.vakuum.fan_speed
             data['batt'] =      self.vakuum.status().battery
-            data['area'] =      self.vakuum.status().clean_area
+            data['area'] =      round(self.vakuum.status().clean_area,2)
             data['cleantime'] = self.vakuum.status().clean_time.seconds // 3600
             data['aktiv'] =     self.vakuum.status().is_on #reinigt?
             data['zone_cleaning'] = ''#self.vakuum.status().in_zone_cleaning #reinigt?
@@ -171,6 +171,8 @@ class Robvac(SmartPlugin):
             data['status'] =    self.vakuum.status().state #status charging
             data['timer'] =     self.vakuum.timer()
             data['timezone'] =  self.vakuum.timezone()
+           
+            #bekannet States: Charging, Pause, Charging Disconnected 
             if data['status'] == 'Charging':
                 data['charging'] = True
             else:
@@ -252,6 +254,9 @@ class Robvac(SmartPlugin):
                 elif message == "set_dnd":
                 #start_hr, start_min, end_hr, end_min
                     self.vakuum.set_dnd(item()[0], item()[1],item()[2], item()[3])
+                elif message == "clean_zone":
+                #Clean zones. :param List zones: List of zones to clean: [[x1,y1,x2,y2, iterations],[x1,y1,x2,y2, iterations]]
+                    self.vakuum.set_dnd(item())
     def run(self):
         self.alive = True
         self.logger.debug("Xiaomi_Robvac: Found items{}".format(self.messages))
