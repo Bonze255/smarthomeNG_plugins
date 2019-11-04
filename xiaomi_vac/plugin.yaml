@@ -4,12 +4,12 @@ plugin:
     type: gateway                  # plugin type (gateway, interface, protocol, system, web)
     description:                  # Alternative: description in multiple languages
         de: 'Zugriff auf Xiaomi Saugroboter'
-        en: ''
-    #maintainer: 'Bonze'
-    #tester: Bonze
-    keywords: communication
+        en: 'COntrol the Xioami Vacuum Robot'
+    maintainer: 'Bonze'
+    tester: 'Bonze','henfri'
+    keywords: communication, iot
+    
 # documentation: 
-
     version: 0.0.1              # Plugin version
     sh_minversion: 1.4           # minimum shNG version to use this plugin
     multi_instance: False          # plugin supports multi instance
@@ -20,10 +20,9 @@ plugin:
      ip: 
          de: 'IP Adresse des Roboters '
          en: 'IP Adress of the Vakuum'
-
-     read_cyl_: 
-         de: '10'
-         en: '10'
+     read_cycle: 
+         de: 'Standart Zyklus 12'
+         en: 'default cycle time 12'
      token: 
          de: 'Token für die Kommunikation'
          en: 'Token for Communication'  
