@@ -256,7 +256,7 @@ class Robvac(SmartPlugin):
                     self.vakuum.set_dnd(item()[0], item()[1],item()[2], item()[3])
                 elif message == "clean_zone":
                 #Clean zones. :param List zones: List of zones to clean: [[x1,y1,x2,y2, iterations],[x1,y1,x2,y2, iterations]]
-                    self.vakuum.set_dnd(item())
+                    self.vakuum.clean_zones(item()[0], item()[1], item()[2], item()[3], item()[4])
     def run(self):
         self.alive = True
         self.logger.debug("Xiaomi_Robvac: Found items{}".format(self.messages))
