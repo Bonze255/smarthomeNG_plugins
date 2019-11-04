@@ -22,9 +22,17 @@ Das Plugin basiert auf der [python-miio](https://github.com/rytilahti/python-mii
 - und anschließendem
 
 ```mirobo```
-
-    die Basics abgefragt werden. 
-
+sollte eine Ausgabe ähnlich diesem anzeigen.
+```
+> State: Charging
+> Battery: 100
+> Fanspeed: 60
+> Cleaning since: 0:00:00
+> Cleaned area: 0.0 m²
+> DND enabled: 0
+> Map present: 1
+> in_cleaning: 0"
+```
 
 ## Funktionen
 
