@@ -44,7 +44,7 @@ from lib.model.smartplugin import SmartPlugin
 
 class Robvac(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
-    PLUGIN_VERSION="0.0.1"
+    PLUGIN_VERSION="0.0.2"
     
     def __init__(self, smarthome,ip='127.0.0.1', token='', read_cycle=60):
         self._ip = str(ip)
@@ -53,8 +53,8 @@ class Robvac(SmartPlugin):
         self.logger = logging.getLogger(__name__)
         
         self.messages = {}
-        self.max_rety = 3
-        self.count_rety = 0
+        self.max_retry = 3
+        self.count_retry = 0
         self.found = False
         self._lock = threading.Lock()
         self.retry_count_max = 3
@@ -131,7 +131,7 @@ class Robvac(SmartPlugin):
                 
             carpet_mode = self.vakuum.carpet_mode()
             data['carpetmode_high'] =       carpet_mode.current_high
-            data['carpetmodes_integral'] =  carpet_mode.current_integral
+            data['carpetmode_integral'] =  carpet_mode.current_integral
             data['carpetmode_low'] =        carpet_mode.current_low
             data['carpetmode_enabled'] =    carpet_mode.enabled
             data['carpetmode_stall_time'] = carpet_mode.stall_time
@@ -153,7 +153,7 @@ class Robvac(SmartPlugin):
                                                                                                             data['dnd_start'],
                                                                                                             data['dnd_end']))
             
-            
+            data['segment_status'] = self.vakuum.get_segment_status()
             data['fanspeed'] =  self.vakuum.fan_speed
             data['batt'] =      self.vakuum.status().battery
             data['area'] =      round(self.vakuum.status().clean_area,2)
@@ -256,7 +256,12 @@ class Robvac(SmartPlugin):
                     self.vakuum.set_dnd(item()[0], item()[1],item()[2], item()[3])
                 elif message == "clean_zone":
                 #Clean zones. :param List zones: List of zones to clean: [[x1,y1,x2,y2, iterations],[x1,y1,x2,y2, iterations]]
-                    self.vakuum.set_dnd(item())
+                    self.vakuum.clean_zone(item()[0], item()[1],item()[2], item()[3], item()[4])
+                elif message == "create_nogo_zones":
+                #Create a rectangular no-go zone (gen2 only?).
+                #NOTE: Multiple nogo zones and barriers could be added by passing a list of them to save_map.
+                    #self.vakuum.clean_zone(item())
+                    pass
     def run(self):
         self.alive = True
         self.logger.debug("Xiaomi_Robvac: Found items{}".format(self.messages))
