@@ -4,7 +4,7 @@ plugin:
     type: gateway                  # plugin type (gateway, interface, protocol, system, web)
     description:                  # Alternative: description in multiple languages
         de: 'Zugriff auf Xiaomi Saugroboter'
-        en: 'COntrol the Xioami Vacuum Robot'
+        en: 'Control the Xioami Vacuum Robot'
     maintainer: 'Bonze'
     tester: 'Bonze','henfri'
     keywords: communication, iot
