@@ -25,13 +25,13 @@ robo:
             type: num
             robvac: 'carpetmode_high'
         carpetmode_integral:
-            type: num
+            type: bool
             robvac: 'carpetmode_integral'
         carpetmode_low:
             type: num
             robvac: 'carpetmode_low'
         carpetmode_enabled:
-            type: bool
+            type: num
             robvac: 'carpetmode_enabled'
         carpetmode_stall_time:
             type: num
@@ -54,6 +54,9 @@ robo:
         pausiert:
             type: bool
             robvac: 'pause'
+        segment_status:
+            type: bool
+            robvac: 'segment_status'
     befehl:
         start:
             type: bool
@@ -105,10 +108,10 @@ robo:
             type: foo
             robvac: 'clean_details_last3'
     einstellungen:
-        luefer_speed:
+        luefter_speed:
             type: num
             robvac: 'fanspeed'
-        luefter:
+        teppichmodus:
             type: bool
             robvac: 'carpet_mode'
         vol:
