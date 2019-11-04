@@ -37,7 +37,7 @@ import time
 
 import miio
 from miio.vacuum import Vacuum, VacuumException
-from miio.vacuumcontainers import (VacuumStatus, ConsumableStatus, DNDStatus, CleaningDetails, CleaningSummary, Timer, )
+from miio.vacuumcontainers import (VacuumStatus, ConsumableStatus, DNDStatus, CleaningDetails, CleaningSummary, Timer)
 from miio.discovery import Discovery
 
 from lib.model.smartplugin import SmartPlugin
@@ -46,19 +46,19 @@ class Robvac(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
     PLUGIN_VERSION="0.0.1"
     
-    def __init__(self, smarthome,ip='127.0.0.1', token='', read_cyl=60):
+    def __init__(self, smarthome,ip='127.0.0.1', token='', read_cycle=60):
         self._ip = str(ip)
         self._token = str(token)
         self._sh = smarthome
         self.logger = logging.getLogger(__name__)
         
         self.messages = {}
-        self.max_ret = 3
-        self.count_ret = 0
+        self.max_rety = 3
+        self.count_rety = 0
         self.found = False
         self._lock = threading.Lock()
-        self.retr_count_max = 3
-        self.retr_count = 1
+        self.retry_count_max = 3
+        self.retry_count = 1
         self._connected = False
 
         if self._token == '':
@@ -66,22 +66,22 @@ class Robvac(SmartPlugin):
             pass
         else:
             self.logger.debug("Xiaomi_Robvac: Plugin Start!")
-            if read_cyl:
-                self._sh.scheduler.add('Xiaomi_Robvac read cycle', self._read, prio=5, cycle=int(read_cyl))
+            if read_cycle:
+                self._sh.scheduler.add('Xiaomi_Robvac read cycle', self._read, prio=5, cycle=int(read_cycle))
     # ----------------------------------------------------------------------------------------------
     # Verbinden zum Roboter
     # ----------------------------------------------------------------------------------------------
     def _connect(self):        
             if self._connected == False:
-                for i in range(self.retr_count_max-self.retr_count):
+                for i in range(self.retry_count_max-self.retry_count):
                     try:
                         self.vakuum = miio.Vacuum(self._ip,self._token, 0, 0)
-                        self.retr_count = 1
+                        self.retry_count = 1
                         self._connected = True
                         return True
                     except Exception as e:
-                        self.logger.error("Xiaomi_Robvac: Error {0}, Cycle {1} ".format(e,self.retr_count))
-                        self.retr_count += 1
+                        self.logger.error("Xiaomi_Robvac: Error {0}, Cycle {1} ".format(e,self.retry_count))
+                        self.retry_count += 1
                         self._connected = False
                     finally:
                         return False
