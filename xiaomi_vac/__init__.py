@@ -136,7 +136,7 @@ class Robvac(SmartPlugin):
             data['carpetmode_enabled'] =    carpet_mode.enabled
             data['carpetmode_stall_time'] = carpet_mode.stall_time
             self.logger.debug("Xiaomi_Robvac: Carpet Mode high: {}, integral: {}, low: {}, enabled: {}, , stall_time: {}".format(data['carpetmode_high'],
-                                                                                                                       data['carpetmodes_integral'],
+                                                                                                                       data['carpetmode_integral'],
                                                                                                                        data['carpetmode_low'],
                                                                                                                        data['carpetmode_enabled'],
                                                                                                                        data['carpetmode_stall_time']))
@@ -154,13 +154,13 @@ class Robvac(SmartPlugin):
                                                                                                             data['dnd_end']))
             
             data['segment_status'] = self.vakuum.get_segment_status()
-            data['fanspeed'] =  self.vakuum.fan_speed
+            data['fanspeed'] =  self.vakuum.status().fanspeed
             data['batt'] =      self.vakuum.status().battery
             data['area'] =      round(self.vakuum.status().clean_area,2)
             data['cleantime'] = self.vakuum.status().clean_time.seconds // 3600
             data['aktiv'] =     self.vakuum.status().is_on #reinigt?
             data['zone_cleaning'] = ''#self.vakuum.status().in_zone_cleaning #reinigt?
-            self.logger.debug("Xiaomi_Robvac: fanspeed {},batt {}, area {}, cleantime {}, aktiv {} zonen_reinigung {}".format(data['fanspeed'], 
+            self.logger.debug("Xiaomi_Robvac: segment_status, fanspeed {},batt {}, area {}, cleantime {}, aktiv {} zonen_reinigung {}".format(data['segment_status'], data['fanspeed'], 
                                                                                                                             data['batt'], 
                                                                                                                             data['area'], 
                                                                                                                             data['cleantime'], 
@@ -228,7 +228,7 @@ class Robvac(SmartPlugin):
             if self.has_iattr(item.conf, 'robvac'):
                 message = self.get_iattr_value(item.conf, 'robvac')
                 self.logger.debug("Xiaomi_Robvac: Tu dies und das !{0} , weil item {1} geändert wurde   ".format(message, item))
-                if message == 'fan_speed':
+                if message == 'fanspeed':
                     self.vakuum.set_fan_speed(item())
                     self.logger.debug("Xiaomi_Robvac: Hab {0} geaendert wurde                       ".format(self.vakuum.fan_speed())) 
                 elif message == 'vol':
