@@ -136,7 +136,7 @@ class Robvac(SmartPlugin):
             data['carpetmode_enabled'] =    carpet_mode.enabled
             data['carpetmode_stall_time'] = carpet_mode.stall_time
             self.logger.debug("Xiaomi_Robvac: Carpet Mode high: {}, integral: {}, low: {}, enabled: {}, , stall_time: {}".format(data['carpetmode_high'],
-                                                                                                                       data['carpetmodes_integral'],
+                                                                                                                       data['carpetmode_integral'],
                                                                                                                        data['carpetmode_low'],
                                                                                                                        data['carpetmode_enabled'],
                                                                                                                        data['carpetmode_stall_time']))
@@ -160,7 +160,7 @@ class Robvac(SmartPlugin):
             data['cleantime'] = self.vakuum.status().clean_time.seconds // 3600
             data['aktiv'] =     self.vakuum.status().is_on #reinigt?
             data['zone_cleaning'] = ''#self.vakuum.status().in_zone_cleaning #reinigt?
-            self.logger.debug("Xiaomi_Robvac: fanspeed {},batt {}, area {}, cleantime {}, aktiv {} zonen_reinigung {}".format(data['fanspeed'], 
+            self.logger.debug("Xiaomi_Robvac: segment_status, fanspeed {},batt {}, area {}, cleantime {}, aktiv {} zonen_reinigung {}".format(data['segment_status'], data['fanspeed'], 
                                                                                                                             data['batt'], 
                                                                                                                             data['area'], 
                                                                                                                             data['cleantime'], 
