@@ -1,6 +1,6 @@
-robo:
+saugroboter:
     live:
-    name: 'Aktuelle Werte des Saugroboters'
+        name: 'Aktuelle Werte des Saugroboters'
         batterie_status:
             name: 'Batterie Status'
             type: num
@@ -63,7 +63,7 @@ robo:
             type: bool
             robvac: 'segment_status'
     befehl:
-    name: 'Befehle zum Saugroboter'
+        name: 'Befehle zum Saugroboter'
         start:
             type: bool
             robvac: 'set_start'
@@ -92,7 +92,7 @@ robo:
             type: list
             robvac: 'set_dnd'
     statistik:
-    name: 'Reinigungsstatistiken'
+        name: 'Reinigungsstatistiken'
         anzahl_reinigungen:
             type: num
             robvac: 'clean_total_count'
@@ -115,7 +115,7 @@ robo:
             type: foo
             robvac: 'clean_details_last3'
     einstellungen:
-    name: 'Einstellbare Parameter'
+        name: 'Einstellbare Parameter'
         luefter_speed:
             type: num
             robvac: 'fanspeed'
