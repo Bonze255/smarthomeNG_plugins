@@ -25,7 +25,7 @@ robo:
             type: num
             robvac: 'carpetmode_high'
         carpetmode_integral:
-            type: bool
+            type: num
             robvac: 'carpetmode_integral'
         carpetmode_low:
             type: num
