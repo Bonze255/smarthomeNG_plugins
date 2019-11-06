@@ -17,7 +17,7 @@ plugin:
     classname: Robvac                # class containing the plugin
     restartable: unknown
     
-item_structs: saugroboter
+item_structs: 
     # Definition of item-structure templates for this plugin (enter 'item_structs: NONE', if section should be empty)
     #item_structs: NONE
 
