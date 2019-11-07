@@ -44,7 +44,7 @@ from lib.model.smartplugin import SmartPlugin
 
 class Robvac(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
-    PLUGIN_VERSION="0.0.2"
+    PLUGIN_VERSION="0.2.0"
     
     def __init__(self, smarthome,ip='127.0.0.1', token='', read_cycle=60):
         self._ip = str(ip)
@@ -153,7 +153,7 @@ class Robvac(SmartPlugin):
                                                                                                             data['dnd_start'],
                                                                                                             data['dnd_end']))
             
-            data['segment_status'] = self.vakuum.get_segment_status()
+            #data['segment_status'] = self.vakuum.get_segment_status()
             data['fanspeed'] =  self.vakuum.status().fanspeed
             data['batt'] =      self.vakuum.status().battery
             data['area'] =      round(self.vakuum.status().clean_area,2)
