@@ -42,7 +42,6 @@ parameters:
         en: 'Token for Communication'
         
 item_structs:
-   saugroboter:
     live:
         name: 'Aktuelle Werte des Saugroboters'
         batterie_status:
@@ -174,7 +173,7 @@ item_structs:
             robvac: 'dnd_onoff'
         serial:
             type: str
-            robvac: 'serial_number'
+            robvac: 'serial'
         timezone:
             type: str
             robvac: 'timezone'
@@ -206,4 +205,3 @@ item_structs:
         sensor_reinigen_verbleibend:
             type: num
             robvac: 'sensor_dirty_left'
-
