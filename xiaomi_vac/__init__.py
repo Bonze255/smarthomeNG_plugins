@@ -40,15 +40,18 @@ from miio.vacuum import Vacuum, VacuumException
 from miio.vacuumcontainers import (VacuumStatus, ConsumableStatus, DNDStatus, CleaningDetails, CleaningSummary, Timer)
 from miio.discovery import Discovery
 
-from lib.model.smartplugin import SmartPlugin
+from lib.model.smartplugin import *
+from lib.module import Modules
+from lib.item import Items
 
 class Robvac(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
-    PLUGIN_VERSION="0.2.0"
+    PLUGIN_VERSION="0.3.0"
     
     def __init__(self, smarthome,ip='127.0.0.1', token='', read_cycle=60):
         self._ip = str(ip)
         self._token = str(token)
+        self._cycle = int(read_cycle)
         self._sh = smarthome
         self.logger = logging.getLogger(__name__)
         
@@ -60,14 +63,17 @@ class Robvac(SmartPlugin):
         self.retry_count_max = 3
         self.retry_count = 1
         self._connected = False
-
+        
+        if not self.init_webinterface():
+            self._init_complete = False
+            
         if self._token == '':
             self.logger.error("Xiaomi_Robvac: No Key for Communication given, Plugin would not start!")
             pass
         else:
             self.logger.debug("Xiaomi_Robvac: Plugin Start!")
             if read_cycle:
-                self._sh.scheduler.add('Xiaomi_Robvac read cycle', self._read, prio=5, cycle=int(read_cycle))
+                self._sh.scheduler.add('Xiaomi_Robvac read cycle', self._read, prio=5, cycle=self._cycle)
     # ----------------------------------------------------------------------------------------------
     # Verbinden zum Roboter
     # ----------------------------------------------------------------------------------------------
@@ -105,7 +111,7 @@ class Robvac(SmartPlugin):
         try:
             clean_history = self.vakuum.clean_history()
             data['clean_total_count'] =           int(clean_history.count)
-            data['clean_total_area'] =      float(clean_history.total_area)
+            data['clean_total_area'] =      round(clean_history.total_area,2)
             data['clean_total_duration'] =  clean_history.total_duration.seconds // 3600
             data['clean_ids'] =             clean_history.ids.sort(reverse = True)
             self.logger.debug("Xiaomi_Robvac: Reingungsstatistik Anzahl {0}, Fläche {1}², Dauer {2}, ids {3}".format(
@@ -153,7 +159,7 @@ class Robvac(SmartPlugin):
                                                                                                             data['dnd_start'],
                                                                                                             data['dnd_end']))
             
-            #data['segment_status'] = self.vakuum.get_segment_status()
+            data['segment_status'] = self.vakuum.get_segment_status()
             data['fanspeed'] =  self.vakuum.status().fanspeed
             data['batt'] =      self.vakuum.status().battery
             data['area'] =      round(self.vakuum.status().clean_area,2)
@@ -177,7 +183,11 @@ class Robvac(SmartPlugin):
                 data['charging'] = True
             else:
                 data['charging'] = False
-                
+            
+           # if data['status'] == 'Pause':
+            #    data['pause'] = True
+            #else:
+            #    data['pause'] = False
             #if data['status'] == 'Charger disconnected':
             #    data['charging'] = True
             #else:
@@ -238,9 +248,15 @@ class Robvac(SmartPlugin):
                         vol = item()
                     self.vakuum.set_sound_volume(vol)
                 elif message == 'set_start':
-                    self.vakuum.start()
+                    if data['pause'] == True:
+                        self.vakuum.resume_or_start()
+                    else:
+                        self.vakuum.start()
                 elif message == 'set_stop':
-                    self.vakuum.home()
+                    if data['zone_cleaning'] == True and data['aktiv'] == True:
+                        self.vakuum.stop_zoned_clean()
+                    else:
+                        self.vakuum.pause()
                 elif message == "set_pause":
                     self.vakuum.pause()
                 elif message == "set_spot":
@@ -284,4 +300,99 @@ class Robvac(SmartPlugin):
             for message in item.get_iattr_value(item.conf, 'robvac'):
             #for message in item.conf['robvac']:  # send status update
                 self.logger.debug("Xiaomi_Robvac: update_item_read {0}".format(message))
+# ------------------------------------------
+#    Webinterface Methoden
+# ------------------------------------------   
 
+    def get_connection_info(self):
+        info = {}
+        info['ip'] = self._ip
+        info['token'] = self._token
+        info['cycle'] = self._cycle
+        return info
+        
+    def init_webinterface(self):
+        """"
+        Initialize the web interface for this plugin
+
+        This method is only needed if the plugin is implementing a web interface
+        """
+        try:
+            self.mod_http = Modules.get_instance().get_module(
+                'http')  # try/except to handle running in a core version that does not support modules
+        except:
+            self.mod_http = None
+        if self.mod_http == None:
+            self.logger.error("Plugin '{}': Not initializing the web interface".format(self.get_shortname()))
+            return False
+
+        # set application configuration for cherrypy
+        webif_dir = self.path_join(self.get_plugin_dir(), 'webif')
+        config = {
+            '/': {
+                'tools.staticdir.root': webif_dir,
+            },
+            '/static': {
+                'tools.staticdir.on': True,
+                'tools.staticdir.dir': 'static'
+            }
+        }
+        
+        self.logger.debug("Plugin '{0}': {1}, {2}, {3}, {4}, {5}".format(self.get_shortname(), webif_dir, self.get_shortname(),config,  self.get_classname(), self.get_instance_name()))
+        # Register the web interface as a cherrypy app
+        self.mod_http.register_webif(WebInterface(webif_dir, self),
+                                     self.get_shortname(),
+                                     config,
+                                     self.get_classname(), self.get_instance_name(),
+                                     description='')
+
+        return True
+
+
+# ------------------------------------------
+#    Webinterface of the plugin
+# ------------------------------------------
+
+import cherrypy
+from jinja2 import Environment, FileSystemLoader
+
+class WebInterface(SmartPluginWebIf):
+
+
+    def __init__(self, webif_dir, plugin):
+        """
+        Initialization of instance of class WebInterface
+
+        :param webif_dir: directory where the webinterface of the plugin resides
+        :param plugin: instance of the plugin
+        :type webif_dir: str
+        :type plugin: object
+        """
+        self.logger = logging.getLogger(__name__)
+        self.webif_dir = webif_dir
+        self.plugin = plugin
+        self.tplenv = self.init_template_environment()
+        self.logger.debug("Plugin : Init Webif")
+        self.items = Items.get_instance()
+        
+    @cherrypy.expose
+    def index(self, reload=None):
+        """
+        Build index.html for cherrypy
+        Render the template and return the html file to be delivered to the browser
+        :return: contents of the template after beeing rendered
+        """
+        plgitems = []
+        for item in self.items.return_items():
+            if ('robvac' in item.conf):
+                plgitems.append(item)
+        self.logger.debug("Plugin : Render index Webif")
+        tmpl = self.tplenv.get_template('index.html')
+        return tmpl.render(plugin_shortname=self.plugin.get_shortname(), 
+                            plugin_version=self.plugin.get_version(),
+                            plugin_info=self.plugin.get_info(),
+                            p=self.plugin,
+                            connection = self.plugin.get_connection_info(),
+                            webif_dir = self.webif_dir ,
+                            items=sorted(plgitems, key=lambda k: str.lower(k['_path'])))
+                            
