@@ -139,26 +139,26 @@ saugroboter:
             robvac: 'timer'
     stundenzaehler:
         buerste_seite:
-            type: foo
+            type: num
             robvac: 'side_brush'
         buerste_seite_verbleibend:
-            type: foo
+            type: num
             robvac: 'side_brush_left'
         buerste_haupt:
-            type: foo
+            type: num
             robvac: 'main_brush'
         buerste_haupt_verbleibend:
-            type: foo
+            type: num
             robvac: 'main_brush_left'
         filter:
-            type: foo
+            type: num
             robvac: 'filter'
         filter_verbleibend:
-            type: foo
+            type: num
             robvac: 'filter_left'
         sensor_reinigen:
-            type: foo
+            type: num
             robvac: 'sensor_dirty'
         sensor_reinigen_verbleibend:
-            type: foo
+            type: num
             robvac: 'sensor_dirty_left'
