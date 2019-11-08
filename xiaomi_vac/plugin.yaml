@@ -11,7 +11,7 @@ plugin:
     keywords: communication, iot
     
 # documentation: 
-    version: 0.2.0              # Plugin version
+    version: 0.3.0              # Plugin version
     sh_minversion: 1.4           # minimum shNG version to use this plugin
     multi_instance: False          # plugin supports multi instance
     classname: Robvac                # class containing the plugin
@@ -42,6 +42,7 @@ parameters:
         en: 'Token for Communication'
         
 item_structs:
+   saugroboter:
     live:
         name: 'Aktuelle Werte des Saugroboters'
         batterie_status:
@@ -182,27 +183,27 @@ item_structs:
             robvac: 'timer'
     stundenzaehler:
         buerste_seite:
-            type: foo
+            type: num
             robvac: 'side_brush'
         buerste_seite_verbleibend:
-            type: foo
+            type: num
             robvac: 'side_brush_left'
         buerste_haupt:
-            type: foo
+            type: num
             robvac: 'main_brush'
         buerste_haupt_verbleibend:
-            type: foo
+            type: num
             robvac: 'main_brush_left'
         filter:
-            type: foo
+            type: num
             robvac: 'filter'
         filter_verbleibend:
-            type: foo
+            type: num
             robvac: 'filter_left'
         sensor_reinigen:
-            type: foo
+            type: num
             robvac: 'sensor_dirty'
         sensor_reinigen_verbleibend:
-            type: foo
+            type: num
             robvac: 'sensor_dirty_left'
 
