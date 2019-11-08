@@ -130,7 +130,7 @@ saugroboter:
             robvac: 'dnd_onoff'
         serial:
             type: str
-            robvac: 'serial_number'
+            robvac: 'serial'
         timezone:
             type: str
             robvac: 'timezone'
