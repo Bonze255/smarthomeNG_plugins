@@ -17,9 +17,7 @@ plugin:
     classname: Robvac                # class containing the plugin
     restartable: unknown
     
-item_structs: #saugroboter
-    # Definition of item-structure templates for this plugin (enter 'item_structs: NONE', if section should be empty)
-    #item_structs: NONE
+
 
 plugin_functions: NONE
     # Definition of plugin functions defined by this plugin (enter 'plugin_functions: NONE', if section should be empty)
@@ -40,3 +38,198 @@ parameters:
     token: 
         de: 'Token für die Kommunikation'
         en: 'Token for Communication'  
+        
+item_structs: #saugroboter
+    live:
+        name: 'Aktuelle Werte des Saugroboters'
+        batterie_status:
+            name: 'Batterie Status'
+            type: num
+            robvac: 'batt'
+        reinigt:
+            name: 'aktuell am reinigen?'
+            type: bool
+            robvac: 'state'
+        zustand:
+            name: 'Betriebszustand'
+            type: str
+            robvac: 'status'
+        aktiv:
+            type: bool
+            robvac: 'aktiv'
+        flaeche:
+            name: 'gereinigte Fläche'
+            type: num
+            robvac: 'area'
+        gereinigt:
+            type: num
+            robvac: 'gereinigt'
+        reinigungszeit:
+            type: num
+            robvac: 'cleantime'
+        carpetmode_high:
+            type: num
+            robvac: 'carpetmode_high'
+        carpetmode_integral:
+            type: num
+            robvac: 'carpetmode_integral'
+        carpetmode_low:
+            type: num
+            robvac: 'carpetmode_low'
+        carpetmode_enabled:
+            type: num
+            robvac: 'carpetmode_enabled'
+        carpetmode_stall_time:
+            type: num
+            robvac: 'carpetmode_stall_time'
+        errorcode:
+            type: num
+            robvac: 'error'
+        dnd_status:
+            type: bool
+            robvac: 'dnd_status'
+        dnd_start:
+            type: foo
+            robvac: 'dnd_start'
+        dnd_end:
+            type: foo
+            robvac: 'dnd_end'
+        zonen_reinigung:
+            type: bool
+            robvac: 'in_zone_cleaning'
+        pausiert:
+            type: bool
+            robvac: 'pause'
+        segment_status:
+            type: bool
+            robvac: 'segment_status'
+    befehl:
+        name: 'Befehle zum Saugroboter'
+        start:
+            type: bool
+            robvac: 'set_start'
+        stop:
+            type: bool
+            robvac: 'set_stop'
+        pause:
+            type: bool
+            robvac: 'set_pause'
+        basis:
+            type: bool
+            robvac: 'set_home'
+        spot_cleaner:
+            type: bool
+            robvac: 'set_spot'
+        find:
+            type: bool
+            robvac: 'set_find'
+        reset_filtertimer:
+            type: bool
+            robvac: 'reset_filtertimer'
+        disable_dnd:
+            type: bool
+            robvac: 'disbale_dnd'
+        set_dnd:
+            type: list
+            robvac: 'set_dnd'
+    statistik:
+        name: 'Reinigungsstatistiken'
+        anzahl_reinigungen:
+            type: num
+            robvac: 'clean_total_count'
+        gereinigte_flaeche:
+            type: num
+            robvac: 'clean_total_area'
+        gesamtlaufzeit:
+            type: num
+            robvac: 'clean_total_duration'
+        reinigungsids:
+            type: foo
+            robvac: 'clean_ids'
+        reinigungsdetails1:
+            type: str
+            robvac: 'clean_details_last1'
+            flaeche:
+                name: 'gereinigte Fläche'
+                type: num
+                robvac: 'last1_area'
+            complete:
+                type: bool
+                robvac: 'last1_complete'
+            reinigungszeit:
+                type: num
+                robvac: 'last1_duration'
+        reinigungsdetails2:
+            type: str
+            robvac: 'clean_details_last2'
+            flaeche:
+                name: 'gereinigte Fläche'
+                type: num
+                robvac: 'last2_area'
+            complete:
+                type: bool
+                robvac: 'last2_complete'
+            reinigungszeit:
+                type: num
+                robvac: 'last2_duration'
+        reinigungsdetails3:
+            type: str
+            robvac: 'clean_details_last3'
+            flaeche:
+                name: 'gereinigte Fläche'
+                type: num
+                robvac: 'last3_area'
+            complete:
+                type: bool
+                robvac: 'last3_complete'
+            reinigungszeit:
+                type: num
+                robvac: 'last3_duration'
+    einstellungen:
+        name: 'Einstellbare Parameter'
+        luefter_speed:
+            type: num
+            robvac: 'fanspeed'
+        teppichmodus:
+            type: bool
+            robvac: 'carpet_mode'
+        vol:
+            type: num
+            robvac: 'vol'
+        dnd:
+            type: bool
+            robvac: 'dnd_onoff'
+        serial:
+            type: str
+            robvac: 'serial'
+        timezone:
+            type: str
+            robvac: 'timezone'
+        timer:
+            type: foo
+            robvac: 'timer'
+    stundenzaehler:
+        buerste_seite:
+            type: num
+            robvac: 'side_brush'
+        buerste_seite_verbleibend:
+            type: num
+            robvac: 'side_brush_left'
+        buerste_haupt:
+            type: num
+            robvac: 'main_brush'
+        buerste_haupt_verbleibend:
+            type: num
+            robvac: 'main_brush_left'
+        filter:
+            type: num
+            robvac: 'filter'
+        filter_verbleibend:
+            type: num
+            robvac: 'filter_left'
+        sensor_reinigen:
+            type: num
+            robvac: 'sensor_dirty'
+        sensor_reinigen_verbleibend:
+            type: num
+            robvac: 'sensor_dirty_left'
