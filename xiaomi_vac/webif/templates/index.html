@@ -34,8 +34,13 @@
 		<tr>
 			<td class="py-1"><strong>{{ _('Host') }}</strong></td>
 			<td class="py-1">{{ connection.ip }}</td>
-			<td class="py-1"><strong></strong></td>
-			<td class="py-1"></td>
+			<td class="py-1"><strong>Verbunden</strong></td>
+			<td class="py-1">{%if connection.connected == True%}
+							<img src="static/img/green.png" height="24" width="24"/>
+						{% else %}
+							<img src="static/img/red.png" height="24" width="24"/>
+						{% endif %}
+			</td>
 		</tr>
 		<tr>
 			<td class="py-1"><strong>{{ _('Token') }} </strong></td>
