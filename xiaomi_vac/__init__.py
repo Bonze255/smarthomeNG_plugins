@@ -6,7 +6,7 @@
 ######################################################################################
 #
 #  Copyright 2018 Version-1    Manuel Holländer
-
+#  Copyright 2019 Version-2    Manuel Holländer
 ####################################################################################
 #
 #  This Plugin is free software: you can redistribute it and/or modify
@@ -46,9 +46,9 @@ from lib.item import Items
 
 class Robvac(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
-    PLUGIN_VERSION="0.3.0"
+    PLUGIN_VERSION="0.4.0"
     
-    def __init__(self, smarthome,ip='127.0.0.1', token='', read_cycle=60):
+    def __init__(self, smarthome,ip='127.0.0.1', token='', read_cycle=20):
         self._ip = str(ip)
         self._token = str(token)
         self._cycle = int(read_cycle)
@@ -56,8 +56,6 @@ class Robvac(SmartPlugin):
         self.logger = logging.getLogger(__name__)
         
         self.messages = {}
-        self.max_retry = 3
-        self.count_retry = 0
         self.found = False
         self._lock = threading.Lock()
         self.retry_count_max = 3
@@ -72,14 +70,16 @@ class Robvac(SmartPlugin):
             pass
         else:
             self.logger.debug("Xiaomi_Robvac: Plugin Start!")
-            if read_cycle:
-                self._sh.scheduler.add('Xiaomi_Robvac read cycle', self._read, prio=5, cycle=self._cycle)
+            if self._cycle > 10:
+                self._sh.scheduler.add('Xiaomi_Robvac Read cycle', self._read, prio=5, cycle=self._cycle)
+            else:
+                self.logger.warning("Xiaomi_Robvac: Read Cycle is to fast! < 10s, not starting!")
     # ----------------------------------------------------------------------------------------------
     # Verbinden zum Roboter
     # ----------------------------------------------------------------------------------------------
     def _connect(self):        
             if self._connected == False:
-                for i in range(self.retry_count_max-self.retry_count):
+                for i in range(0,self.retry_count_max-self.retry_count):
                     try:
                         self.vakuum = miio.Vacuum(self._ip,self._token, 0, 0)
                         self.retry_count = 1
@@ -87,10 +87,11 @@ class Robvac(SmartPlugin):
                         return True
                     except Exception as e:
                         self.logger.error("Xiaomi_Robvac: Error {0}, Cycle {1} ".format(e,self.retry_count))
-                        self.retry_count += 1
+                        self.retry_count = self.retry_count+1
                         self._connected = False
-                    finally:
                         return False
+                    #finally:
+                        
             
     # ----------------------------------------------------------------------------------------------
     # Daten Lesen, über SHNG bei item_Change
@@ -113,8 +114,8 @@ class Robvac(SmartPlugin):
             data['clean_total_count'] =           int(clean_history.count)
             data['clean_total_area'] =      round(clean_history.total_area,2)
             data['clean_total_duration'] =  clean_history.total_duration.seconds // 3600
-            data['clean_ids'] =             clean_history.ids.sort(reverse = True)
-            self.logger.debug("Xiaomi_Robvac: Reingungsstatistik Anzahl {0}, Fläche {1}², Dauer {2}, ids {3}".format(
+            data['clean_ids'] =             clean_history.ids#.sort(reverse = True)
+            self.logger.debug("Xiaomi_Robvac: Reingungsstatistik Anzahl {0}, Fläche {1}², Dauer {2}, clean ids {3}".format(
                                                                                                             data['clean_total_count'], 
                                                                                                             data['clean_total_area'], 
                                                                                                             data['clean_total_duration'], 
@@ -128,9 +129,19 @@ class Robvac(SmartPlugin):
             #letzte reinigung
             #funktioniert nur mit übergebener id
             if data['clean_ids'] != None:
-                data['clean_details_last'] = self.vakuum.clean_details(data['clean_ids'][0])
-                data['clean_details_last1'] = self.vakuum.clean_details(data['clean_ids'][1])
-                data['clean_details_last2'] = self.vakuum.clean_details(data['clean_ids'][2])
+                #data['clean_ids'] = data['clean_ids'].sort(reverse=True)
+                data['clean_details_last'] = self.vakuum.clean_details(data['clean_ids'][1],return_list=True)
+                data['last1_area'] = round(data['clean_details_last'][0].area,2)
+                data['last1_complete'] = data['clean_details_last'][0].complete
+                data['last1_duration'] = data['clean_details_last'][0].duration.seconds//3600
+                data['clean_details_last1'] = self.vakuum.clean_details(data['clean_ids'][2])
+                data['last2_area'] = round(data['clean_details_last1'][0].area,2)
+                data['last2_complete'] = data['clean_details_last1'][0].complete
+                data['last2_duration'] = data['clean_details_last1'][0].duration.seconds//3600
+                data['clean_details_last2'] = self.vakuum.clean_details(data['clean_ids'][3])
+                data['last3_area'] = round(data['clean_details_last2'][0].area,2)
+                data['last3_complete'] = data['clean_details_last2'][0].complete
+                data['last3_duration'] = data['clean_details_last2'][0].duration.seconds //3600
                 self.logger.debug("Xiaomi_Robvac: Historische id1 {}, id2{}, id3 {}".format(data['clean_details_last'],
                                                                                             data['clean_details_last1'],
                                                                                             data['clean_details_last2']))
@@ -175,7 +186,7 @@ class Robvac(SmartPlugin):
             data['error'] =     self.vakuum.status().error_code
             data['pause'] =     self.vakuum.status().is_paused #reinigt? 
             data['status'] =    self.vakuum.status().state #status charging
-            data['timer'] =     self.vakuum.timer()
+            data['timer'] =     self.vakuum.timer()[0]
             data['timezone'] =  self.vakuum.timezone()
            
             #bekannet States: Charging, Pause, Charging Disconnected 
@@ -309,6 +320,7 @@ class Robvac(SmartPlugin):
         info['ip'] = self._ip
         info['token'] = self._token
         info['cycle'] = self._cycle
+        info['connected'] = self._connected
         return info
         
     def init_webinterface(self):
