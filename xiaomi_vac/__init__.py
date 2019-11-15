@@ -259,15 +259,15 @@ class Robvac(SmartPlugin):
                         vol = item()
                     self.vakuum.set_sound_volume(vol)
                 elif message == 'set_start':
-                    if self._data['pause'] == True:
-                        self.vakuum.resume_or_start()
-                    else:
-                        self.vakuum.start()
+                   # if self._data['pause'] == True:
+                     #   self.vakuum.resume_or_start()
+                    #else:
+                    self.vakuum.start()
                 elif message == 'set_stop':
-                    if self._data['zone_cleaning'] == True and self._data['aktiv'] == True:
-                        self.vakuum.stop_zoned_clean()
-                    else:
-                        self.vakuum.pause()
+                    #if self._data['zone_cleaning'] == True and self._data['aktiv'] == True:
+                      #  self.vakuum.stop_zoned_clean()
+                    #else:
+                    self.vakuum.pause()
                 elif message == "set_pause":
                     self.vakuum.pause()
                 elif message == "set_spot":
