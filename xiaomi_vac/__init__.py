@@ -14,7 +14,7 @@
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
-#  smartopenHMI is distributed in the hope that it will be useful,
+#  smarthomeNG is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
@@ -130,18 +130,18 @@ class Robvac(SmartPlugin):
             #funktioniert nur mit übergebener id
             if self._data['clean_ids'] != None:
                 #self._data['clean_ids'] = self._data['clean_ids'].sort(reverse=True)
-                self._data['clean_details_last'] = self.vakuum.clean_details(self._data['clean_ids'][1],return_list=True)[0]
-                self._data['last1_area'] =          round(self._data['clean_details_last'].area,2)
-                self._data['last1_complete'] =      self._data['clean_details_last'].complete
-                self._data['last1_duration'] =      self._data['clean_details_last'].duration.seconds//3600
-                self._data['clean_details_last1'] = self.vakuum.clean_details(self._data['clean_ids'][2],return_list=True)[0]
+                self._data['clean_details_last'] = self.vakuum.clean_details(self._data['clean_ids'][1],return_list=True)
+                self._data['last1_area'] =          round(self._data['clean_details_last'][0].area,2)
+                self._data['last1_complete'] =      self._data['clean_details_last'][0].complete
+                self._data['last1_duration'] =      self._data['clean_details_last'][0].duration.seconds//3600
+                self._data['clean_details_last1'] = self.vakuum.clean_details(self._data['clean_ids'][2],return_list=True)
                 self._data['last2_area'] =          round(self._data['clean_details_last1'][0].area,2)
-                self._data['last2_complete'] =      self._data['clean_details_last1'].complete
-                self._data['last2_duration'] =      self._data['clean_details_last1'].duration.seconds//3600
-                self._data['clean_details_last2'] = self.vakuum.clean_details(self._data['clean_ids'][3],return_list=True)[0]
-                self._data['last3_area'] =          round(self._data['clean_details_last2'].area,2)
-                self._data['last3_complete'] =      self._data['clean_details_last2'].complete
-                self._data['last3_duration'] =      self._data['clean_details_last2'].duration.seconds //3600
+                self._data['last2_complete'] =      self._data['clean_details_last1'][0].complete
+                self._data['last2_duration'] =      self._data['clean_details_last1'][0].duration.seconds//3600
+                self._data['clean_details_last2'] = self.vakuum.clean_details(self._data['clean_ids'][3],return_list=True)
+                self._data['last3_area'] =          round(self._data['clean_details_last2'][0].area,2)
+                self._data['last3_complete'] =      self._data['clean_details_last2'][0].complete
+                self._data['last3_duration'] =      self._data['clean_details_last2'][0].duration.seconds //3600
                 self.logger.debug("Xiaomi_Robvac: Historische id1 {}, id2{}, id3 {}".format(self._data['clean_details_last'],
                                                                                             self._data['clean_details_last1'],
                                                                                             self._data['clean_details_last2']))
@@ -284,6 +284,8 @@ class Robvac(SmartPlugin):
                 elif message == "clean_zone":
                 #Clean zones. :param List zones: List of zones to clean: [[x1,y1,x2,y2, iterations],[x1,y1,x2,y2, iterations]]
                     self.vakuum.clean_zone(item()[0], item()[1],item()[2], item()[3], item()[4])
+                elif message == "go_to":    
+                    self.vakuum.goto(item()[0], item()[1])
                 elif message == "create_nogo_zones":
                 #Create a rectangular no-go zone (gen2 only?).
                 #NOTE: Multiple nogo zones and barriers could be added by passing a list of them to save_map.
