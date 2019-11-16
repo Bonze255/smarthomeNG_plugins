@@ -147,7 +147,7 @@ item_structs: #saugroboter
             type: foo
             robvac: 'clean_ids'
         reinigungsdetails1:
-            type: str
+            type: foo
             robvac: 'clean_details_last1'
             flaeche:
                 name: 'gereinigte Fläche'
@@ -160,7 +160,7 @@ item_structs: #saugroboter
                 type: num
                 robvac: 'last1_duration'
         reinigungsdetails2:
-            type: str
+            type: foo
             robvac: 'clean_details_last2'
             flaeche:
                 name: 'gereinigte Fläche'
@@ -173,7 +173,7 @@ item_structs: #saugroboter
                 type: num
                 robvac: 'last2_duration'
         reinigungsdetails3:
-            type: str
+            type: foo
             robvac: 'clean_details_last3'
             flaeche:
                 name: 'gereinigte Fläche'
