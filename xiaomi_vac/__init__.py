@@ -251,7 +251,7 @@ class Robvac(SmartPlugin):
             if self.has_iattr(item.conf, 'robvac'):
                 #bei boolischem item Item zurücksetzen, damit enforce_updates nicht nötig!
                 if item() == True:
-                    item = False
+                    item(False, 'Robvac')
  
                 message = self.get_iattr_value(item.conf, 'robvac')
                 self.logger.debug("Xiaomi_Robvac: Tu dies und das !{0} , weil item {1} geändert wurde   ".format(message, item))
