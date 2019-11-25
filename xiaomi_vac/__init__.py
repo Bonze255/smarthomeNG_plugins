@@ -34,6 +34,7 @@ import struct
 import binascii
 import re
 import time
+from datetime import datetime
 
 import miio
 from miio.vacuum import Vacuum, VacuumException
@@ -120,12 +121,7 @@ class Robvac(SmartPlugin):
                                                                                                     self._data['clean_total_area'], 
                                                                                                     self._data['clean_total_duration'], 
                                                                                                     self._data['clean_ids']))
-           
-            #->2018-12-26  11:10:37 DEBUG    plugins.xiaomi_vac Xiaomi_Robvac: Letze Reinigung Details<CleaningDetails: 2018-11-01 16:18:27 (duration: 0:00:05, done: 
-                        #historische reinigung
-            
-            #_>2018-12-26  11:10:37 DEBUG    plugins.xiaomi_vac Xiaomi_Robvac: Histroische daten Reinigung <CleaningSummary: 23 times, total time: 14:01:42, total area: 556.2675, ids: [1545742801, 1545483493, 1545397202, 1544349386, 1544187601, 1543928402, 1543585780, 1543323601, 1542978001, 1542732823, 1542718801, 1542373202, 1542114000, 1541768401, 1541509200, 1541166079, 1541163602, 1541095176, 1541090077, 1541085507]>
-            
+
             #letzte reinigung
             #funktioniert nur mit übergebener id
             if self._data['clean_ids'] != None:
@@ -134,14 +130,26 @@ class Robvac(SmartPlugin):
                 self._data['last1_area'] =          round(self._data['clean_details_last'][0].area,2)
                 self._data['last1_complete'] =      self._data['clean_details_last'][0].complete
                 self._data['last1_duration'] =      self._data['clean_details_last'][0].duration.seconds//3600
+                self._data['last1_start_date'] =    self._data['clean_details_last'][0].start.strftime("%d.%m.%Y")
+                self._data['last1_start_time'] =    self._data['clean_details_last'][0].start.strftime("%H:%I")                 
+                self._data['last1_end_date'] =      self._data['clean_details_last'][0].start.strftime("%d.%m.%Y")
+                self._data['last1_end_time'] =      self._data['clean_details_last'][0].start.strftime("%H:%I")   
                 self._data['clean_details_last1'] = self.vakuum.clean_details(self._data['clean_ids'][2],return_list=True)
                 self._data['last2_area'] =          round(self._data['clean_details_last1'][0].area,2)
                 self._data['last2_complete'] =      self._data['clean_details_last1'][0].complete
                 self._data['last2_duration'] =      self._data['clean_details_last1'][0].duration.seconds//3600
+                self._data['last2_start_date'] =    self._data['clean_details_last1'][0].start.strftime("%d.%m.%Y")
+                self._data['last2_start_time'] =    self._data['clean_details_last1'][0].start.strftime("%H:%I")   
+                self._data['last2_end_date'] =      self._data['clean_details_last1'][0].start.strftime("%d.%m.%Y")
+                self._data['last2_end_time'] =      self._data['clean_details_last1'][0].start.strftime("%H:%I")   
                 self._data['clean_details_last2'] = self.vakuum.clean_details(self._data['clean_ids'][3],return_list=True)
                 self._data['last3_area'] =          round(self._data['clean_details_last2'][0].area,2)
                 self._data['last3_complete'] =      self._data['clean_details_last2'][0].complete
                 self._data['last3_duration'] =      self._data['clean_details_last2'][0].duration.seconds //3600
+                self._data['last3_start_date'] =    self._data['clean_details_last2'][0].start.strftime("%d.%m.%Y")
+                self._data['last3_start_time'] =    self._data['clean_details_last2'][0].start.strftime("%H:%I")   
+                self._data['last3_end_date'] =      self._data['clean_details_last2'][0].start.strftime("%d.%m.%Y")
+                self._data['last3_end_time'] =      self._data['clean_details_last2'][0].start.strftime("%H:%I")   
                 self.logger.debug("Xiaomi_Robvac: Historische id1 {}, id2{}, id3 {}".format(self._data['clean_details_last'],
                                                                                             self._data['clean_details_last1'],
                                                                                             self._data['clean_details_last2']))
@@ -170,23 +178,26 @@ class Robvac(SmartPlugin):
                                                                                                     self._data['dnd_start'],
                                                                                                     self._data['dnd_end']))
             
+            self._data['device_group'] = self.vakuum.get_device_group()
             self._data['segment_status'] = self.vakuum.get_segment_status()
             self._data['fanspeed'] =  self.vakuum.status().fanspeed
             self._data['batt'] =      self.vakuum.status().battery
             self._data['area'] =      round(self.vakuum.status().clean_area,2)
             self._data['cleantime'] = self.vakuum.status().clean_time.seconds // 3600
             self._data['aktiv'] =     self.vakuum.status().is_on #reinigt?
-            self._data['zone_cleaning'] = ''#self.vakuum.status().in_zone_cleaning #reinigt?
-            self.logger.debug("Xiaomi_Robvac: segment_status, fanspeed {},batt {}, area {}, cleantime {}, aktiv {} zonen_reinigung {}".format(self._data['segment_status'], self._data['fanspeed'], 
+            self._data['zone_cleaning'] = self.vakuum.status().in_zone_cleaning #reinigt?
+            self._data['is_error'] = self.vakuum.status().got_error 
+            self.logger.debug("Xiaomi_Robvac: segment_status, fanspeed {},batt {}, area {}, cleantime {}, aktiv {} zonen_reinigung {} , device group{}".format(self._data['segment_status'], self._data['fanspeed'], 
                                                                                                     self._data['batt'], 
                                                                                                     self._data['area'], 
                                                                                                     self._data['cleantime'], 
                                                                                                     self._data['aktiv'], 
-                                                                                                    self._data['zone_cleaning']))
+                                                                                                    self._data['zone_cleaning'], 
+                                                                                                    self._data['device_group']))
             self._data['error'] =     self.vakuum.status().error_code
             self._data['pause'] =     self.vakuum.status().is_paused #reinigt? 
             self._data['status'] =    self.vakuum.status().state #status charging
-            self._data['timer'] =     self.vakuum.timer()[0]
+            self._data['timer'] =     self.vakuum.timer()#[self.vakuum.timer()[0]['id'], self.vakuum.timer()[0]['action'], self.vakuum.timer()[0]['enabled'], self.vakuum.timer()[0]['ts']] 
             self._data['timezone'] =  self.vakuum.timezone()
            
             #bekannet States: Charging, Pause, Charging Disconnected 
@@ -194,16 +205,7 @@ class Robvac(SmartPlugin):
                 self._data['charging'] = True
             else:
                 self._data['charging'] = False
-            
-           # if self._data['status'] == 'Pause':
-            #    self._data['pause'] = True
-            #else:
-            #    self._data['pause'] = False
-            #if self._data['status'] == 'Charger disconnected':
-            #    self._data['charging'] = True
-            #else:
-            #    self._data['charging'] = False    
-            
+
             #->2018-12-26  11:10:37 DEBUG    plugins.xiaomi_vac Xiaomi_Robvac: Lese batt 100 area0.0 time 0:00:15 status False stateCharging
             self.logger.debug("Xiaomi_Robvac: error {}, pause {}, status{} , timer {}, timezone{}".format(   self._data['error'], 
                                                                                                        self._data['pause'], 
@@ -247,8 +249,13 @@ class Robvac(SmartPlugin):
             #if 'robvac' in item.conf:
             #    message = item.conf['robvac']
             if self.has_iattr(item.conf, 'robvac'):
+                #bei boolischem item Item zurücksetzen, damit enforce_updates nicht nötig!
+                if item() == True:
+                    item = False
+ 
                 message = self.get_iattr_value(item.conf, 'robvac')
                 self.logger.debug("Xiaomi_Robvac: Tu dies und das !{0} , weil item {1} geändert wurde   ".format(message, item))
+                
                 if message == 'fanspeed':
                     self.vakuum.set_fan_speed(item())
                     self.logger.debug("Xiaomi_Robvac: Hab {0} geaendert wurde                       ".format(self.vakuum.fan_speed())) 
@@ -259,15 +266,11 @@ class Robvac(SmartPlugin):
                         vol = item()
                     self.vakuum.set_sound_volume(vol)
                 elif message == 'set_start':
-                   # if self._data['pause'] == True:
-                     #   self.vakuum.resume_or_start()
-                    #else:
                     self.vakuum.start()
                 elif message == 'set_stop':
-                    #if self._data['zone_cleaning'] == True and self._data['aktiv'] == True:
-                      #  self.vakuum.stop_zoned_clean()
-                    #else:
                     self.vakuum.pause()
+                elif message == "set_home":
+                    self.vakuum.home()
                 elif message == "set_pause":
                     self.vakuum.pause()
                 elif message == "set_spot":
@@ -278,19 +281,20 @@ class Robvac(SmartPlugin):
                     self.vakuum.reset_consumable()
                 elif message == "disable_dnd":
                     self.vakuum.disable_dnd()
+                    
                 elif message == "set_dnd":
                 #start_hr, start_min, end_hr, end_min
                     self.vakuum.set_dnd(item()[0], item()[1],item()[2], item()[3])
                 elif message == "clean_zone":
                 #Clean zones. :param List zones: List of zones to clean: [[x1,y1,x2,y2, iterations],[x1,y1,x2,y2, iterations]]
-                    self.vakuum.clean_zone(item()[0], item()[1],item()[2], item()[3], item()[4])
+                    self.vakuum.zoned_clean(item()[0], item()[1],item()[2], item()[3], item()[4])
                 elif message == "go_to":    
                     self.vakuum.goto(item()[0], item()[1])
                 elif message == "create_nogo_zones":
-                #Create a rectangular no-go zone (gen2 only?).
-                #NOTE: Multiple nogo zones and barriers could be added by passing a list of them to save_map.
-                    #self.vakuum.clean_zone(item())
+                    self.vakuum.create_nogo_zone(item()[0], item()[1])
+ 
                     pass
+                    
     def run(self):
         self.alive = True
         self.logger.debug("Xiaomi_Robvac: Found items{}".format(self.messages))
