@@ -47,7 +47,7 @@ from lib.item import Items
 
 class Robvac(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
-    PLUGIN_VERSION="0.4.0"
+    PLUGIN_VERSION="1.0.0"
     
     def __init__(self, smarthome,ip='127.0.0.1', token='', read_cycle=20):
         self._ip = str(ip)
@@ -126,32 +126,41 @@ class Robvac(SmartPlugin):
             #funktioniert nur mit übergebener id
             if self._data['clean_ids'] != None:
                 #self._data['clean_ids'] = self._data['clean_ids'].sort(reverse=True)
-                self._data['clean_details_last'] = self.vakuum.clean_details(self._data['clean_ids'][1],return_list=True)
-                self._data['last1_area'] =          round(self._data['clean_details_last'][0].area,2)
-                self._data['last1_complete'] =      self._data['clean_details_last'][0].complete
-                self._data['last1_duration'] =      round(self._data['clean_details_last'][0].duration.total_seconds()/ 3600,2)
-                self._data['last1_start_date'] =    self._data['clean_details_last'][0].start.strftime("%d.%m.%Y")
-                self._data['last1_start_time'] =    self._data['clean_details_last'][0].start.strftime("%H:%M")                 
-                self._data['last1_end_date'] =      self._data['clean_details_last'][0].start.strftime("%d.%m.%Y")
-                self._data['last1_end_time'] =      (self._data['clean_details_last'][0].start+self._data['clean_details_last'][0].duration).strftime("%H:%M")
+                self._data['clean_details_last0'] = self.vakuum.clean_details(self._data['clean_ids'][0],return_list=True)
+                self._data['last0_area'] =          round(self._data['clean_details_last'][0].area,2)
+                self._data['last0_complete'] =      self._data['clean_details_last'][0].complete
+                self._data['last0_duration'] =      round(self._data['clean_details_last'][0].duration.total_seconds()/ 3600,2)
+                self._data['last0_start_date'] =    self._data['clean_details_last'][0].start.strftime("%d.%m.%Y")
+                self._data['last0_start_time'] =    self._data['clean_details_last'][0].start.strftime("%H:%M")                 
+                self._data['last0_end_date'] =      self._data['clean_details_last'][0].start.strftime("%d.%m.%Y")
+                self._data['last0_end_time'] =      (self._data['clean_details_last'][0].start+self._data['clean_details_last0'][0].duration).strftime("%H:%M")
                 
-                self._data['clean_details_last1'] = self.vakuum.clean_details(self._data['clean_ids'][2],return_list=True)
-                self._data['last2_area'] =          round(self._data['clean_details_last1'][0].area,2)
-                self._data['last2_complete'] =      self._data['clean_details_last1'][0].complete
-                self._data['last2_duration'] =      round(self._data['clean_details_last1'][0].duration.total_seconds()/ 3600,2)
-                self._data['last2_start_date'] =    self._data['clean_details_last1'][0].start.strftime("%d.%m.%Y")
-                self._data['last2_start_time'] =    self._data['clean_details_last1'][0].start.strftime("%H:%M")   
-                self._data['last2_end_date'] =      self._data['clean_details_last1'][0].start.strftime("%d.%m.%Y")
-                self._data['last2_end_time'] =      (self._data['clean_details_last1'][0].start+self._data['clean_details_last1'][0].duration).strftime("%H:%M")
+                self._data['clean_details_last1'] = self.vakuum.clean_details(self._data['clean_ids'][1],return_list=True)
+                self._data['last1_area'] =          round(self._data['clean_details_last1'][0].area,2)
+                self._data['last1_complete'] =      self._data['clean_details_last1'][0].complete
+                self._data['last1_duration'] =      round(self._data['clean_details_last1'][0].duration.total_seconds()/ 3600,2)
+                self._data['last1_start_date'] =    self._data['clean_details_last1'][0].start.strftime("%d.%m.%Y")
+                self._data['last1_start_time'] =    self._data['clean_details_last1'][0].start.strftime("%H:%M")                 
+                self._data['last1_end_date'] =      self._data['clean_details_last1'][0].start.strftime("%d.%m.%Y")
+                self._data['last1_end_time'] =      (self._data['clean_details_last1'][0].start+self._data['clean_details_last1'][0].duration).strftime("%H:%M")
                 
-                self._data['clean_details_last2'] = self.vakuum.clean_details(self._data['clean_ids'][3],return_list=True)
-                self._data['last3_area'] =          round(self._data['clean_details_last2'][0].area,2)
-                self._data['last3_complete'] =      self._data['clean_details_last2'][0].complete
-                self._data['last3_duration'] =      round(self._data['clean_details_last2'][0].duration.total_seconds()/ 3600,2)
-                self._data['last3_start_date'] =    self._data['clean_details_last2'][0].start.strftime("%d.%m.%Y")
-                self._data['last3_start_time'] =    self._data['clean_details_last2'][0].start.strftime("%H:%M")   
-                self._data['last3_end_date'] =      self._data['clean_details_last2'][0].start.strftime("%d.%m.%Y")
-                self._data['last3_end_time'] =      (self._data['clean_details_last2'][0].start+self._data['clean_details_last2'][0].duration).strftime("%H:%M")
+                self._data['clean_details_last2'] = self.vakuum.clean_details(self._data['clean_ids'][2],return_list=True)
+                self._data['last2_area'] =          round(self._data['clean_details_last2'][0].area,2)
+                self._data['last2_complete'] =      self._data['clean_details_last2'][0].complete
+                self._data['last2_duration'] =      round(self._data['clean_details_last2'][0].duration.total_seconds()/ 3600,2)
+                self._data['last2_start_date'] =    self._data['clean_details_last2'][0].start.strftime("%d.%m.%Y")
+                self._data['last2_start_time'] =    self._data['clean_details_last2'][0].start.strftime("%H:%M")   
+                self._data['last2_end_date'] =      self._data['clean_details_last2'][0].start.strftime("%d.%m.%Y")
+                self._data['last2_end_time'] =      (self._data['clean_details_last2'][0].start+self._data['clean_details_last2'][0].duration).strftime("%H:%M")
+                
+                self._data['clean_details_last3'] = self.vakuum.clean_details(self._data['clean_ids'][3],return_list=True)
+                self._data['last3_area'] =          round(self._data['clean_details_last3'][0].area,2)
+                self._data['last3_complete'] =      self._data['clean_details_last3'][0].complete
+                self._data['last3_duration'] =      round(self._data['clean_details_last3'][0].duration.total_seconds()/ 3600,2)
+                self._data['last3_start_date'] =    self._data['clean_details_last3'][0].start.strftime("%d.%m.%Y")
+                self._data['last3_start_time'] =    self._data['clean_details_last3'][0].start.strftime("%H:%M")   
+                self._data['last3_end_date'] =      self._data['clean_details_last3'][0].start.strftime("%d.%m.%Y")
+                self._data['last3_end_time'] =      (self._data['clean_details_last3'][0].start+self._data['clean_details_last3'][0].duration).strftime("%H:%M")
                 
                 self.logger.debug("Xiaomi_Robvac: Historische id1 {}, id2{}, id3 {}".format(self._data['clean_details_last'],
                                                                                             self._data['clean_details_last1'],
