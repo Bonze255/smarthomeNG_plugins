@@ -40,6 +40,7 @@ parameters:
         en: 'Token for Communication'  
         
 item_structs: #saugroboter
+saugroboter:
     live:
         name: 'Aktuelle Werte des Saugroboters'
         batterie_status:
@@ -85,6 +86,9 @@ item_structs: #saugroboter
         errorcode:
             type: num
             robvac: 'error'
+        error:
+            type: bool
+            robvac: 'is_error'
         dnd_status:
             type: bool
             robvac: 'dnd_status'
@@ -96,7 +100,7 @@ item_structs: #saugroboter
             robvac: 'dnd_end'
         zonen_reinigung:
             type: bool
-            robvac: 'in_zone_cleaning'
+            robvac: 'zone_cleaning'
         pausiert:
             type: bool
             robvac: 'pause'
@@ -132,6 +136,9 @@ item_structs: #saugroboter
         set_dnd:
             type: list
             robvac: 'set_dnd'
+        goto:
+            type: list
+            robvac: 'go_to'
     statistik:
         name: 'Reinigungsstatistiken'
         anzahl_reinigungen:
@@ -146,6 +153,31 @@ item_structs: #saugroboter
         reinigungsids:
             type: foo
             robvac: 'clean_ids'
+        reinigungsdetails0:
+            type: foo
+            robvac: 'clean_details_last0'
+            flaeche:
+                name: 'gereinigte Fläche'
+                type: num
+                robvac: 'last0_area'
+            complete:
+                type: bool
+                robvac: 'last0_complete'
+            reinigungszeit:
+                type: num
+                robvac: 'last0_duration'
+            start_date:
+                type: str
+                robvac: 'last0_start_date'
+            start_time:
+                type: str
+                robvac: 'last0_start_time'
+            end_date:
+                type: str
+                robvac: 'last0_end_date'
+            end_time:
+                type: str
+                robvac: 'last0_end_time'
         reinigungsdetails1:
             type: foo
             robvac: 'clean_details_last1'
@@ -159,6 +191,18 @@ item_structs: #saugroboter
             reinigungszeit:
                 type: num
                 robvac: 'last1_duration'
+            start_date:
+                type: str
+                robvac: 'last1_start_date'
+            start_time:
+                type: str
+                robvac: 'last1_start_time'
+            end_date:
+                type: str
+                robvac: 'last1_end_date'
+            end_time:
+                type: str
+                robvac: 'last1_end_time'
         reinigungsdetails2:
             type: foo
             robvac: 'clean_details_last2'
@@ -172,6 +216,18 @@ item_structs: #saugroboter
             reinigungszeit:
                 type: num
                 robvac: 'last2_duration'
+            start_date:
+                type: str
+                robvac: 'last2_start_date'
+            start_time:
+                type: str
+                robvac: 'last2_start_time'
+            end_date:
+                type: str
+                robvac: 'last2_end_date'
+            end_time:
+                type: str
+                robvac: 'last2_end_time'
         reinigungsdetails3:
             type: foo
             robvac: 'clean_details_last3'
@@ -185,6 +241,18 @@ item_structs: #saugroboter
             reinigungszeit:
                 type: num
                 robvac: 'last3_duration'
+            start_date:
+                type: str
+                robvac: 'last3_start_date'
+            start_time:
+                type: str
+                robvac: 'last3_start_time'
+            end_date:
+                type: str
+                robvac: 'last3_end_date'
+            end_time:
+                type: str
+                robvac: 'last3_end_time'
     einstellungen:
         name: 'Einstellbare Parameter'
         luefter_speed:
