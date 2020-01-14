@@ -1,0 +1,152 @@
+[smarttv]
+	type = str
+    smarttv = true
+    smarttv_id = 1
+    enforce_updates = true
+	[[handshake]]
+	    name = "Activate Handshake"
+		type = bool
+        smarttv = "HANDSHAKE"
+		visu_acl = rw
+    [[handshakekey]]
+		name = "Handshakekey"
+		type = str
+        smarttv = "HANDSHAKEKEY"
+        smarttv_handshake = 1
+        sql = True
+		cache = True
+		visu_acl = rw
+	#[[funktions]]	
+		[[message]] # funktioniert
+			name = "Hellomessage"
+			type = bool
+			enforce_updates = true
+			smarttv = SET_MSG                                  #Befehl
+			smarttv_value = "Herzlich Willkommen by SmarthomeNG"#value
+			visu_acl = rw
+		[[message2]] # funktioniert
+			name = "Hellomessage"
+			type = bool
+			enforce_updates = true
+			smarttv = SET_MSG2                                  #Befehl
+			smarttv_value = "Herzlich Willkommen by SmarthomeNG"|"\\SMARTHOMEVM\SmartHome.py\plugins\lgsmarttv\logo.png" #value
+			visu_acl = rw
+		[[show_pic]] # funktioniert
+			name = "Kamerabild1"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_SHOWPIC                                 #Befehl
+			smarttv_value = "http://www.groemitz.de/webcam/pics/aktuell_webcam.jpg"|"Hinten"|"Beschreibung"
+			visu_acl = rw
+		[[show_media]]
+			name = "Kamerabild1"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_SHOWMEDIA                                 #Befehl
+			smarttv_value = "http://www.groemitz.de/webcam/pics/aktuell_webcam.jpg"|"Hinten"|"Beschreibung"|1
+			visu_acl = rw
+		[[open_media_player]]
+			name = "öffne media player"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_OPENMEDIAPL                                #Befehl
+			smarttv_value = "http://www.groemitz.de/webcam/pics/aktuell_webcam.jpg"|"Hinten"|"Beschreibung"
+			visu_acl = rw
+		[[get_info]]
+			name = "öffne media player"
+			type = bool
+			enforce_updates = true
+			smarttv = GET_SYSTEMINFO                                 #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[get_services]]
+			name = "öffne media player"
+			type = bool
+			enforce_updates = true
+			smarttv = GET_SERVICES                               #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[get_channels]]
+			name = "get channellist"
+			type = bool
+			enforce_updates = true
+			smarttv = GET_CHANNELLIST                                #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+        [[get_channel]]
+			name = "get channel"
+			type = bool
+			enforce_updates = true
+			smarttv = GET_CHANNELINFO                                #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[get_inputlist]]
+			name = "get channel"
+			type = bool
+			enforce_updates = true
+			smarttv = GET_INPUTLIST                               #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[set_input]]
+			name = "get channel"
+			type = bool
+			enforce_updates = true
+			smarttv = SET_INPUTSOURCE                                #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+        [[set_3don]]
+			name = "3D ein"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_3DON                                #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[set_3doff]]
+			name = "3Daus"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_3DOFF                                #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+        [[Channel_up]]
+			name = "Programm hoch"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_CHANNELUP                                #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[Channel_down]]
+			name = "Programm runter"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_CHANNELDOWN                               #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[Vol_up]]
+			name = "Laustärke hoch"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_VOLUP                              #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[Vol_down]]
+			name = "Laustärke runter"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_VOLDOWN                             #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+		[[Mute]]
+			name = "Mute"
+			type = bool
+			enforce_updates = true
+			smarttv = KEY_MUTE                             #Befehl
+			smarttv_value = ""
+			visu_acl = rw
+        	[[Mute]]
+			name = "INFO"
+			type = bool
+			enforce_updates = true
+			smarttv = GET_PROGRAMMINFO                            #Befehl
+			smarttv_value = ""
+			visu_acl = rw
