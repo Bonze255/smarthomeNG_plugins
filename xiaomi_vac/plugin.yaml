@@ -139,6 +139,12 @@ saugroboter:
         goto:
             type: list
             robvac: 'go_to'
+        segment_clean:
+            type: list
+            robvac: 'segment_clean'
+        clean_zone:
+            type: list
+            robvac: 'clean_zone'
     statistik:
         name: 'Reinigungsstatistiken'
         anzahl_reinigungen:
