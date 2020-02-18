@@ -1,4 +1,3 @@
-
 #
 #!/usr/bin/env python3
 # vim: set encoding=utf-8 tabstop=4 softtabstop=4 shiftwidth=4 expandtab
@@ -50,7 +49,7 @@ class Dbird(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
     PLUGIN_VERSION="0.1.0"
     
-    def __init__(self, smarthome,ip='127.0.0.1', username='', password='', read_cycle=60, image_dir='', max_files = 10):
+    def __init__(self, smarthome,ip='127.0.0.1', username='', password='', read_cycle=60, image_dir='', max_files = 10, webserver_image_dir=''):
         self._ip = str(ip)
         self._username = str(username)
         self._password = str(password)
@@ -58,6 +57,7 @@ class Dbird(SmartPlugin):
         self._cycle = int(read_cycle)
         self._sh = smarthome
         self.logger = logging.getLogger(__name__)
+        self._webserver_image_dir = str(webserver_image_dir)
         self._image_dir = str(image_dir)
         self._data = {}
         self.messages = {}
@@ -65,11 +65,14 @@ class Dbird(SmartPlugin):
         self.retry_count_max = 3
         self.retry_count = 1
         self._connected = False
+        self.udp_port = 4244
         
+        #OPen the UDP Port
+        self.UDPServerThread = threading.Thread(target = self.UDPServer)
+        self.UDPServerThread.start()
         
-            
         if self._username == '' or self._password == '':
-            self.logger.error("Doorbird: No USername/Password for Communication given, Plugin would not start!")
+            self.logger.error("Doorbird: No Username/Password for Communication given, Plugin would not start!")
         else:
             self.logger.debug("Doorbird: Plugin Start!")
             self._doorbird = doorbirdpy.DoorBird(self._ip, self._username, self._password)
@@ -85,17 +88,14 @@ class Dbird(SmartPlugin):
                         self._data['wifi_mac'] = str(self._data['info']['WIFI_MAC_ADDR'])
                         self._data['relays'] = self._data['info']['RELAYS']
                         self._data['device_type'] = self._data['info']['DEVICE-TYPE']  
-                    #self._data['doorbell_state'] = self._doorbird.doorbell_state()
+
                     self._data['motion_sensor_state'] = self._doorbird.motion_sensor_state()
                     self._data['live_video'] = '<img width=75% src = "'+self._doorbird.live_video_url+'"/>'
                     self._data['rtsp_live_video'] = '<img width=75% src = "'+self._doorbird.rtsp_live_video_url+'"/>'
                     self._data['live_image'] = '<img width=75% src = "'+self._doorbird.live_image_url+'"/>'
                     self._data['snapshot_images'] = self.get_files()
-                if read_cycle:
+                    
                     self._sh.scheduler.add('Doorbird read cycle', self._read, prio=5, cycle=self._cycle)
-                #else:
-                #    self.logger.error("Doorbird: Plugin failure , check Ip/Username/Password!")
-               
             except Exception as e:
                 self.logger.error("Doorbird: Error {}".format(e))        
         if not self.init_webinterface():
@@ -116,8 +116,6 @@ class Dbird(SmartPlugin):
     def _read(self):
         motion =[]
         doorbell = []
-        #config
-
 
         try:
             self._data['info'] = self._doorbird.info()
@@ -135,8 +133,6 @@ class Dbird(SmartPlugin):
             self._data['live_image'] = '<img width=75% src = "'+self._doorbird.live_image_url+'"/>'
             for i in range(1,self._max_files ):
                 motion.append(self._doorbird.history_image_url(i, 'motionsensor'))
-                
-                
                 doorbell.append(self._doorbird.history_image_url(i, "doorbell"))
             self.logger.debug("Doorbird: Doorbell images {}".format(doorbell))
             self.logger.debug("Doorbird: Motion images {}".format(motion))
@@ -188,8 +184,7 @@ class Dbird(SmartPlugin):
                         self.logger.debug("Doorbird: Send MESSAGE {},  RESPONSE {} ".format(message, response))
     def run(self):
         self.alive = True
-        #self.logger.debug("Doorbird: Found items{}".format(self.messages))
-        
+
     def stop(self):
         self.alive = False
         
@@ -206,7 +201,7 @@ class Dbird(SmartPlugin):
     def update_item_read(self, item, caller=None, source=None, dest=None):
         if self.has_iattr(item.conf, 'doorbird'):
             for message in item.get_iattr_value(item.conf, 'doorbird'):
-            #for message in item.conf['robvac']:  # send status update
+
                 self.logger.debug("Doorbird: update_item_read {0}".format(message))
             
     def make_snapshot(self):
@@ -241,7 +236,7 @@ class Dbird(SmartPlugin):
         if filename.exists():
             try:
                 for file in filename.glob('*.jpg'):
-                    files.append('http://192.168.178.91/smartVISU2.9/doorbirdimg/'+str(file.name)+'')
+                    files.append(self._webserver_image_dir+str(file.name)+'')
                     self.logger.debug("Doorbird: Snapshot-FIle found {}".format(file.name))
                 files.sort()
                 if len(files)>0:
@@ -266,13 +261,23 @@ class Dbird(SmartPlugin):
             for file in range(self._max_files, len(files)-1):
                 filepath = Path(files[file])
                 filepath.unlink
-        #return the last x files     
-        #if len(files)> maxfiles:
-        #    for image in files:
-        #        image = Path(image)
-                #print(image.stem)
-                
         return files
+        
+        
+    def UDPServer(self):
+        ip=''
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Allow incoming broadcasts
+        s.setblocking(False) # Set socket to non-blocking mode
+        s.bind(('', self.udp_port)) #Accept Connections on port
+        while True:
+            try:
+                message, address = s.recvfrom(8192) # Buffer size is 8192. Change as needed.
+                print('message',message)
+                self.UDPMessageParser(message.decode("utf-8") )
+            except Exception as e:
+                self.logger.info("RadioINet: Cannot connect.",e)
+                
 # ------------------------------------------
 #    Webinterface Methoden
 # ------------------------------------------   
