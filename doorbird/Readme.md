@@ -4,18 +4,18 @@ It uses pycryptodome and  chacha20-poly1305to encrypt the UDP Ethernet Pakets.
 
 ## Supported by the Plugin
 * Make snapshots
-* Get the images as array
+* Get the images as array for visualisation with smarthomeNG
 * Get Motion/Doorbell Events
 
 ## Supported from doorbirdpy
-
-* Live video request
-* Live image request
-* Open door/other relays
-* Light on
-* History image requests
-* Schedule requests
-* Favorites requests
-* Check request
-* Info request
-* RTSP
+* get the URLs for
+  * Live video request
+  * Live image request
+  * Open door/other relays
+  * Light on
+  * History image requests
+  * Schedule requests
+  * Favorites requests
+  * Check request
+  * Info request
+  * RTSP
