@@ -272,11 +272,11 @@ class Dbird(SmartPlugin):
         s.bind(('', self.udp_port)) #Accept Connections on port
         while True:
             try:
-                message, address = s.recvfrom(8192) # Buffer size is 8192. Change as needed.
+                message, address = s.recvfrom(1024) # Buffer size is 8192. Change as needed.
                 print('message',message)
                 self.UDPMessageParser(message.decode("utf-8") )
             except Exception as e:
-                self.logger.info("RadioINet: Cannot connect.",e)
+                self.logger.info("Doorbird: Cannot connect to UDP Port.",e)
                 
 # ------------------------------------------
 #    Webinterface Methoden
