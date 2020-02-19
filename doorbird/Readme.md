@@ -5,7 +5,7 @@ It uses pycryptodome and  PyNaCl to encrypt the UDP ethernet Pakets.
 ## Supported by the Plugin
 * Make snapshots
 * Get the images as array
-
+* Get Motion/Doorbell Events
 
 ## Supported from doorbirdpy
 
