@@ -5,6 +5,7 @@ import requests
 class WAQI():
     #http://flothesof.github.io/world-air-quality-pollution-maps.html
     def __init__(self):
+        self._data = []
         self.base_url = "https://api.waqi.info"
         self.token = "ae2c2b905e7bddc91c967a5a4ea9d6cdc757f9cb"
         self.city = 'germany/rheinlandpfalz/kaiserslautern-rathausplatz'
