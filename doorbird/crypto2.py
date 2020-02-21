@@ -22,7 +22,7 @@ class Dbird:
     def __init__(self):
         self._ip = '192.168.178.94'
         self._username = 'ghevnh0003'
-        self._password = '7vf9CMkU4h'
+        self._password = ''
         #UDP SERVER THREAD
         self.UDPServerThread = threading.Thread(target = self.UDPServer)
         self.UDPServerThread.start()
