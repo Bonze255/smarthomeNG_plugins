@@ -56,3 +56,7 @@ item_structs:
       name: 't'
       type: num
       waqi: 't'
+   luftqualitaet:
+      name: 'aqi'
+      type: num
+      waqi: 'aqi'
