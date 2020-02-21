@@ -23,6 +23,7 @@ class Dbird:
         self._ip = '192.168.178.94'
         self._username = 'ghevnh0003'
         self._password = ''
+        self._udpport = 35344
         #UDP SERVER THREAD
         self.UDPServerThread = threading.Thread(target = self.UDPServer)
         self.UDPServerThread.start()
@@ -40,7 +41,8 @@ class Dbird:
                 streched = nacl.pwhash.argon2i.kdf(32,self._password[:5], salt, opslimit=oplimit, memlimit=mlimit,encoder=nacl.encoding.RawEncoder)
                 cipher = ChaCha20_Poly1305.new(key=streched, nonce=nonce)
                 plaintext = cipher.decrypt(ciphertext)
-                
+                user, event, timestamp = struct.unpack(">6s8sl",payload)
+                print(user,event,timestamp)
                 decryped_user = plaintext[:6]
                 decryped_doorbellnumber = plaintext[7:14]
                 timestamp = plaintext[14:20]
@@ -54,12 +56,11 @@ class Dbird:
                 return False
         
     def UDPServer(self):
-        port = 35344 #alternativ 35344
         ip=''
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 5) # Allow incoming broadcasts
         s.setblocking(True) # Set socket to non-blocking mode
-        s.bind(('', port)) #Accept Connections on port
+        s.bind(('', self._udpport)) #Accept Connections on port
         while True:
             try:
                 message, address = s.recvfrom(1024) # Buffer size is 8192. Change as needed.
