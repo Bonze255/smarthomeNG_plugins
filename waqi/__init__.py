@@ -61,9 +61,9 @@ class Waqi(SmartPlugin):
         try:
             r = requests.get(self.base_url + f"/feed/"+self._city+"/?token="+self._token)
             if r.status_code == 200:
-                for value in r.json()['data']['iaqi']:
-                    self.logger.debug("Waqi: request {}".format(value))
-                    self._data[value] = r.json['data']['iaqi'][value]['v']
+                for key in r.json()['data']['iaqi']:
+                    self.logger.debug("Waqi: request {}".format(key))
+                    self._data[key] = r.json()['data']['iaqi'][key]['v']
                     #self._data['data'].update(self._data[value])
                 #self._data['no2'] = r.json()['data']['iaqi']['no2']['v']
                 #self._data['o3'] = r.json()['data']['iaqi']['o3']['v']
@@ -75,7 +75,8 @@ class Waqi(SmartPlugin):
                 #self._data['aqi'] = r.json()['data']['aqi']
                 #self._data['city'] = r.json()['data']['city']['name']
                 self.logger.debug("Waqi: request {}".format(r.json()))
-                #self._data['data'].update({city:r.json['data']['city'][name]})
+                data = self._data
+                self._data['data'] = data
                 #self._data['data'] = {'no2':self._data['no2'],'o3':self._data['o3'],'p':self._data['p'],'pm10':self._data['pm10'],'t':self._data['t'],'aqi':self._data['aqi']}
             else:
                  self.logger.error("Waqi: Reading ERROR from Waqi")
