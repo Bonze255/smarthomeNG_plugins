@@ -1,0 +1,14 @@
+
+/**
+* A widget to display waqi
+*
+* @param {id=} unique id for this widget (optional)
+* @param {text} a directory where the pictures are located
+**/
+{% macro waqi(id, item) %}
+	{% set uid = uid(page, id) %}
+	 
+	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="weather.waqi" data-item="{{ item }}">
+		<div class="waqi-table" style ="width:100%;position: relative"> </div>
+	</div>
+{% endmacro %}
