@@ -58,38 +58,30 @@ class Waqi(SmartPlugin):
     
     def _read(self):
         self._data = {}
+        self._data['data'] = {}
         try:
             r = requests.get(self.base_url + f"/feed/"+self._city+"/?token="+self._token)
             if r.status_code == 200:
                 for key in r.json()['data']['iaqi']:
                     self.logger.debug("Waqi: request {}".format(key))
                     self._data[key] = r.json()['data']['iaqi'][key]['v']
-                    #self._data['data'].update(self._data[value])
-                #self._data['no2'] = r.json()['data']['iaqi']['no2']['v']
-                #self._data['o3'] = r.json()['data']['iaqi']['o3']['v']
-                #self._data['p'] = r.json()['data']['iaqi']['p']['v']
-                #self._data['pm10'] = r.json()['data']['iaqi']['pm10']['v']
-                #self._data['t'] = r.json()['data']['iaqi']['t']['v']
-                #self._data['w'] = r.json()['data']['w']
-                #self._data['wg'] = r.json()['data']['wg']
-                #self._data['aqi'] = r.json()['data']['aqi']
-                #self._data['city'] = r.json()['data']['city']['name']
-                self.logger.debug("Waqi: request {}".format(r.json()))
-                data = self._data
-                self._data['data'] = data
-                #self._data['data'] = {'no2':self._data['no2'],'o3':self._data['o3'],'p':self._data['p'],'pm10':self._data['pm10'],'t':self._data['t'],'aqi':self._data['aqi']}
+                    self._data['data'][key] = r.json()['data']['iaqi'][key]['v']
+                self._data['data']['city'] = r.json()['data']['city']['name']
+                self._data['aqi'] = r.json()['data']['aqi']
+                self._data['data']['aqi'] = r.json()['data']['aqi']
+                self.logger.debug("Waqi: data{}".format(self._data))
+ 
             else:
                  self.logger.error("Waqi: Reading ERROR from Waqi")
         except Exception as e:
                 self.logger.error("Waqi: Error {}".format(e))
-
         for x in self._data:
+            
             if x in self.messages:
                 self.logger.debug("Waqi: Update item {1} mit key {0} = {2}".format(x, self.messages[x], self._data[x]))
                 item = self.messages[x]
                 item(self._data[x], 'Waqi')
                 
-
     # ----------------------------------------------------------------------------------------------
     # Befehl senden, wird aufgerufen wenn sich item  mit robvac ändert!
     # ----------------------------------------------------------------------------------------------
