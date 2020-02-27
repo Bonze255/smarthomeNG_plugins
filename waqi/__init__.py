@@ -66,9 +66,10 @@ class Waqi(SmartPlugin):
                     self.logger.debug("Waqi: request {}".format(key))
                     self._data[key] = r.json()['data']['iaqi'][key]['v']
                     self._data['data'][key] = r.json()['data']['iaqi'][key]['v']
-                self._data['data']['city'] = r.json()['data']['city']['name']
+                
                 self._data['aqi'] = r.json()['data']['aqi']
                 self._data['data']['aqi'] = r.json()['data']['aqi']
+                self._data['data']['city'] = r.json()['data']['city']['name']
                 self.logger.debug("Waqi: data{}".format(self._data))
  
             else:
