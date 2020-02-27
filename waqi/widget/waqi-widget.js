@@ -1,4 +1,4 @@
----- weather.waqi -------------------------------------------------
+// ----- weather.waqi -------------------------------------------------
 
 $.widget("sv.weather_waqi", $.sv.widget, {
 
@@ -74,18 +74,33 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 			
 			//wert mit skala vergleichen und anschließend felder einfärben
 			for (i=0;i<spectrum.length-2;i++) {
-				if (specie == 'city'){
+				if (specie == 'pm25' || specie == 'pm10' || specie == 'o3' || specie == 'no2' || specie == 'so2' || specie == 'co'|| specie == 'aqi' ){
+					font_color = spectrum[i]['f'];
+					bg_color = spectrum[i]['b'];
+					console.log("spectrum val", spectrum[i]);
+					if (value=="-"||value<=spectrum[i].a){
+						break;
+					};
+				}else if (specie =='t'){
+					if(spectrum[i] >= 25){
+						bg_color = '#ca0035';
+					}else if (spectrum[i] < 4){
+						bg_color = '#1877f2';
+					}
+				}else if (specie =='wg'){
+					if(spectrum[i] >= 10.8){
+						bg_color = '#fe9633';
+					}else if (spectrum[i] >=20,8){
+						bg_color = '#ca0035';
+					}else{
+						bg_color = '#00787e';
+					}
+				}else{
 					font_color = '#FFFFFF';
 					bg_color = '';
 					break;
-					
-				}
-				font_color = spectrum[i]['f'];
-				bg_color = spectrum[i]['b'];
-				console.log("spectrum val", spectrum[i]);
-				if (value=="-"||value<=spectrum[i].a){
-					break;
-				}
+				};
+				
 			};	
 			
 			
