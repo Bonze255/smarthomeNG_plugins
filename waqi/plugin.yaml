@@ -32,31 +32,51 @@ parameters:
         en: 'token'
         
 item_structs: 
-   stickstoffdioxide:
-      name: 'no2'
-      type: num
-      waqi: 'no2'    
-   ozon:
-      name: 'o3'
-      type: num
-      waqi: 'o3'
-   luftdruck:
-      name: 'p'
-      type: num
-      waqi: 'p'
-   feinstaub:
-      name: 'pm10'
-      type: num
-      waqi: 'pm10'
-   windgeschwindigkeit:
-      name: 'wg'
-      type: num
-      waqi: 'wg'
-   temperatur:
-      name: 't'
-      type: num
-      waqi: 't'
-   luftqualitaet:
-      name: 'aqi'
-      type: num
-      waqi: 'aqi'
+ waqi:
+    stickstoffdioxide:
+        name: 'no2'
+        type: num
+        waqi: 'no2'
+        visu_acl: rw
+        database: 'yes'
+    ozon:
+        name: 'o3'
+        type: num
+        waqi: 'o3'
+        visu_acl: rw
+        database: 'yes'
+    luftdruck:
+        name: 'p'
+        type: num
+        waqi: 'p'
+        visu_acl: rw
+        database: 'yes'
+    feinstaub:
+        name: 'pm10'
+        type: num
+        waqi: 'pm10'
+        visu_acl: rw
+        database: 'yes'
+    windgeschwindigkeit:
+        name: 'wg'
+        type: num
+        waqi: 'wg'
+        visu_acl: rw
+        database: 'yes'
+    temperatur:
+        name: 't'
+        type: num
+        waqi: 't'
+        visu_acl: rw
+        database: 'yes'
+    luftqualitaet:
+        name: 'aqi'
+        type: num
+        waqi: 'aqi'
+        visu_acl: rw
+        database: 'yes'
+    data:
+        name: 'Austausch mit Widget'
+        type: foo
+        visu_acl: rw
+        waqi: 'data'
