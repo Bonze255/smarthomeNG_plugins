@@ -22,13 +22,13 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 			so2: "Schwefeldioxid [µg/m³]",
 			co2: "Kohlenstoffdioxid",
 			t: "Temperatur [°C]",
-			w: "Wind [m/s]",
+			w: "Windgeschwindigkeit [m/s]",
 			wg: "Windgeschwindigkeit [m/s]",
 			r: "Rain (precipitation) [mm]",
 			h: "Luftfeuchtigkeit [%]",
 			d: "Taupunkt",
 			p: "Luftdruck [hPa]",
-			city: "Datenaufnahme",
+			city: "Datenquelle",
 			aqi: "Luftqualität [aqi]"
 		}
 		var aqi_spectrum = [
@@ -54,18 +54,17 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 			{a:400,b:"#4e0016", f:'#FFFFFF'},
 			];
 		var items = String(this.options.item).explode();
-		console.log(items, "response0", response[0]);
-		//$('.waqi-table').append("<h2>Luftqualität</h2>");
 		var tr = "<table style=width:100%;><tr>"
 		var font_color;
 		var bg_color;
 		//werte aus datenarray durchgehen
 		for (var specie in response[0]) {
 			console.log(specie, response[0][specie]);
+			if (specie.includes('alarm')){
+				break;
+			} 
 			var value = response[0][specie];
 			var i = 0;
-			//bei  api  andere scalala laden
-			console.log(specie);
 			if (specie == 'aqi' ){
 				spectrum = aqi_spectrum;				
 			}else{
@@ -77,7 +76,7 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 				if (specie == 'pm25' || specie == 'pm10' || specie == 'o3' || specie == 'no2' || specie == 'so2' || specie == 'co'|| specie == 'aqi' ){
 					font_color = spectrum[i]['f'];
 					bg_color = spectrum[i]['b'];
-					console.log("spectrum val", spectrum[i]);
+					
 					if (value=="-"||value<=spectrum[i].a){
 						break;
 					};
@@ -105,7 +104,7 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 			
 			
 			var name = names[specie];
-			tr+="<td style=min-width:30px;font-size:120%; text-align: left;>"+name+"</td><td style=color:"+font_color+";background-color:"+bg_color+";min-width:30px;font-size:120%;>"+response[0][specie]+"</td></tr>";
+			tr+="<td style=min-width:30px;font-size:120%; text-align: left;>"+name+"</td><td style=color:"+font_color+";background-color:"+bg_color+";min-width:30px;font-size:100%;>"+response[0][specie]+"</td></tr>";
 			
 		}
 		tr+="</table>";
