@@ -30,7 +30,15 @@ parameters:
     token: 
         de: 'token'
         en: 'token'
-        
+    city:
+        de: 'cityurl'
+        en: 'cityurl'
+    cycle:
+        de: 'read cycle'
+        en: 'read cycle'
+    alarm:
+        de: 'alarm value'
+        en: 'alarm value'
 item_structs: 
  waqi:
     stickstoffdioxide:
@@ -45,18 +53,39 @@ item_structs:
         waqi: 'o3'
         visu_acl: rw
         database: 'yes'
+        alarm:
+            type: bool
+            waqi: 'o3_alarm'
+            visu_acl: rw
+            database: 'yes'
     luftdruck:
         name: 'p'
         type: num
         waqi: 'p'
         visu_acl: rw
         database: 'yes'
-    feinstaub:
+    feinstaub10:
         name: 'pm10'
         type: num
         waqi: 'pm10'
         visu_acl: rw
         database: 'yes'
+        alarm:
+            type: bool
+            waqi: 'pm10_alarm'
+            visu_acl: rw
+            database: 'yes'
+    feinstaub25:
+        name: 'pm25'
+        type: num
+        waqi: 'pm25'
+        visu_acl: rw
+        database: 'yes'
+        alarm:
+            type: bool
+            waqi: 'pm25_alarm'
+            visu_acl: rw
+            database: 'yes'
     windgeschwindigkeit:
         name: 'wg'
         type: num
@@ -75,6 +104,11 @@ item_structs:
         waqi: 'aqi'
         visu_acl: rw
         database: 'yes'
+        alarm:
+            type: bool
+            waqi: 'aqi_alarm'
+            visu_acl: rw
+            database: 'yes'
     data:
         name: 'Austausch mit Widget'
         type: foo
