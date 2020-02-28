@@ -27,18 +27,17 @@ class Waqi(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
     PLUGIN_VERSION="1.0.0"
     
-    def __init__(self, smarthome,city='/', token='',cycle=20):
+    def __init__(self, smarthome,city='/', token='',cycle=20, alarm=150):
         self._city= str(city)
         self._cycle = int(cycle)
         self._token = str(token)
+        self._alarm = alarm
         self._sh = smarthome
         self.logger = logging.getLogger(__name__)
         self.messages = {}
         self._lock = threading.Lock()
 
         self.base_url = "https://api.waqi.info"
-        #self.token = "ae2c2b905e7bddc91c967a5a4ea9d6cdc757f9cb"
-        #self.city = 'germany/rheinlandpfalz/kaiserslautern-rathausplatz'
         self._read()
         
         self._sh.scheduler.add('Waqi read cycle', self._read, prio=5, cycle=self._cycle)
@@ -66,12 +65,37 @@ class Waqi(SmartPlugin):
                     self.logger.debug("Waqi: request {}".format(key))
                     self._data[key] = r.json()['data']['iaqi'][key]['v']
                     self._data['data'][key] = r.json()['data']['iaqi'][key]['v']
-                
+                    
                 self._data['aqi'] = r.json()['data']['aqi']
+                if r.json()['data']['aqi'] >= self._alarm:
+                    self._data['aqi_alarm'] = True
+                else:
+                    self._data['aqi_alarm'] = False
+                    
+                if (('pm25' in r.json()['data'].keys()) and (r.json()['data']['pm25'] >= self._alarm)):
+                    self._data['pm25_alarm'] = True
+                else:
+                    self._data['pm25_alarm'] = False
+                    
+                if (('o3' in r.json()['data'].keys()) and (r.json()['data']['o3'] >= self._alarm)):
+                    self._data['o3_alarm'] = True
+                else:
+                    self._data['o3_alarm'] = False
+                    
+                if (('no2' in r.json()['data'].keys()) and (r.json()['data']['no2'] >= self._alarm)):
+                    self._data['no2_alarm'] = True
+                else:
+                    self._data['no2_alarm'] = False
+                
+                if (('so2' in r.json()['data'].keys()) and (r.json()['data']['so2'] >= self._alarm)):
+                    self._data['so2_alarm'] = True
+                else:
+                    self._data['so2_alarm'] = False 
+                    
                 self._data['data']['aqi'] = r.json()['data']['aqi']
                 self._data['data']['city'] = r.json()['data']['city']['name']
                 self.logger.debug("Waqi: data{}".format(self._data))
- 
+                
             else:
                  self.logger.error("Waqi: Reading ERROR from Waqi")
         except Exception as e:
@@ -245,6 +269,6 @@ class WebInterface(SmartPluginWebIf):
                             p=self.plugin,
                             connection = self.plugin.get_connection_info(),
                             webif_dir = self.webif_dir,
-                            image_snapshots = self.plugin.get_files(),
+                            #image_snapshots = self.plugin.get_files(),
                             items=sorted(plgitems, key=lambda k: str.lower(k['_path'])))
                             
