@@ -1,0 +1,129 @@
+﻿# Metadata for the Doorbird Plugin
+plugin:
+    # Global plugin attributes
+    type: gateway                  # plugin type (gateway, interface, protocol, system, web)
+    description:                  # Alternative: description in multiple languages
+        de: 'Zugriff auf die Doorbird  Sprechanlage'
+        en: 'Control the Doorbird'
+    maintainer: Bonze
+    state: develop 
+    tester: Bonze 
+    keywords: communication, iot
+    
+# documentation: 
+    version: 1.0.0             # Plugin version
+    sh_minversion: 1.4           # minimum shNG version to use this plugin
+    multi_instance: False          # plugin supports multi instance
+    classname: Dbird               # class containing the plugin
+    restartable: unknown
+    
+
+plugin_functions: NONE
+    # Definition of plugin functions defined by this plugin (enter 'plugin_functions: NONE', if section should be empty)
+    #plugin_functions: NONE
+
+logic_parameters: NONE
+    # Definition of logic parameters defined by this plugin (enter 'logic_parameters: NONE', if section should be empty)
+    #logic_parameters: NONE
+
+# Definition of parameters to be configured in etc/plugin.yaml
+parameters:
+    ip: 
+        de: 'IP Adresse der Doorbird '
+        en: 'IP Adress of the Doorbird'
+    read_cycle: 
+        de: 'Standart Zyklus 10'
+        en: 'default cycle time 10'
+    username: 
+        de: 'Username für die Kommunikation'
+        en: 'username for Communication'  
+    password: 
+        de: 'Passwort für die Kommunikation'
+        en: 'password for Communication' 
+    image_dir: 
+        de: 'Pfad, wo snapshots gespeichert werden soll'
+        en: 'Acess Path to save the pictures from snapshot '
+    webserver_image_dir: 
+        de: 'Pfad zumm Zugriff auf Ordner über webserver z.B: http://192.168.178.91/smartVisu2.9/doorbirdimg/'
+        en: 'Access Url to Image files'
+    max_files: 
+        de: 'Anzahl der zu speichernden Snapshots'
+        en: 'max pictures from snapshot function'
+item_structs: 
+    live:
+        name: 'Aktuelle Werte der Sprechanlage'
+        klingel:
+            name: 'Klingel Status'
+            type: bool
+            doorbird: 'doorbell_state'
+        bewegungsmelder:
+            name: 'Klingel Status'
+            type: bool
+            doorbird: 'motion_sensor_state'
+        snapshot_images:
+            name: 'Snapshot Images'
+            type: list
+            visu_acl: rw
+            doorbird: 'snapshot_images'
+        doorbell_images:
+            name: 'Doorbell Images'
+            type: list
+            visu_acl: rw
+            doorbird: 'doorbell_images'
+        motion_images:
+            name: 'Motion Images'
+            type: list
+            visu_acl: rw
+            doorbird: 'motion_images'
+        live_image:
+            name: 'Live image Url'
+            type: str
+            doorbird: 'live_image'
+        live_video:
+            name: 'Live video Url'
+            type: str
+            doorbird: 'live_video'
+        rtsp_live_video:
+            name: 'RTSP Live video Url'
+            type: str
+            doorbird: 'rtsp_live_video'
+      
+    befehl:
+        name: 'Befehle zum Doorbird'
+        Relay1:
+            visu_acl: rw
+            type: bool
+            doorbird: 'relay1'
+        Relay2:
+            visu_acl: rw
+            type: bool
+            doorbird: 'relay2'
+        Licht:
+            visu_acl: rw
+            type: bool
+            doorbird: 'light_on'
+        Restart:
+            visu_acl: rw
+            type: bool
+            doorbird: 'restart'
+        Snapshot:
+            visu_acl: rw
+            type: bool
+            doorbird: 'snapshot'
+    infos:
+        name: 'Infos'
+        firmware:
+            type: str
+            doorbird: 'firmware'
+        build:
+            type: num
+            doorbird: 'build'
+        wifi_mac:
+            type: str
+            doorbird: 'wifi_mac'
+        relays:
+            type: foo
+            doorbird: 'relays'
+        device_type:
+            type: str
+            doorbird: 'device_type'
