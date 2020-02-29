@@ -8,26 +8,7 @@
 #  Copyright 2020 Version-1    Manuel Holländer
 
 ####################################################################################
-#
-#  This Plugin is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  smartopenHMI is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with SmartHome.py. If not, see <http://www.gnu.org/licenses/>.
-#
-####################################################################################
-#
-#   VERSION - 1
-#
-####################################################################################
-# 
+
 import logging
 import threading
 import struct
@@ -47,7 +28,7 @@ from lib.item import Items
 
 class Dbird(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
-    PLUGIN_VERSION="0.1.0"
+    PLUGIN_VERSION="1.0.0"
     
     def __init__(self, smarthome,ip='127.0.0.1', username='', password='', read_cycle=60, image_dir='', max_files = 10, webserver_image_dir=''):
         self._ip = str(ip)
@@ -68,14 +49,15 @@ class Dbird(SmartPlugin):
         self.udp_port = 4244
         
         #OPen the UDP Port
-        self.UDPServerThread = threading.Thread(target = self.UDPServer)
-        self.UDPServerThread.start()
+        self.DoorbirdUDPServer = threading.Thread(target = self.UDPServer)
+        self.DoorbirdUDPServer.start()
         
         if self._username == '' or self._password == '':
             self.logger.error("Doorbird: No Username/Password for Communication given, Plugin would not start!")
         else:
             self.logger.debug("Doorbird: Plugin Start!")
             self._doorbird = doorbirdpy.DoorBird(self._ip, self._username, self._password)
+            self._sh.scheduler.add('Doorbird read cycle', self._read, prio=5, cycle=self._cycle)
             try:
                 if self._doorbird.ready() == True:
                     self.logger.debug("Doorbird: Plugin Start!")
@@ -95,7 +77,7 @@ class Dbird(SmartPlugin):
                     self._data['live_image'] = '<img width=75% src = "'+self._doorbird.live_image_url+'"/>'
                     self._data['snapshot_images'] = self.get_files()
                     
-                    self._sh.scheduler.add('Doorbird read cycle', self._read, prio=5, cycle=self._cycle)
+                    
             except Exception as e:
                 self.logger.error("Doorbird: Error {}".format(e))        
         if not self.init_webinterface():
@@ -117,9 +99,10 @@ class Dbird(SmartPlugin):
         motion =[]
         doorbell = []
 
+        
         try:
             self._data['info'] = self._doorbird.info()
-            
+            self.logger.debug("Doorbird: ready cycle {}".format(self._data['info']))
             if len(self._data['info']) > 1:
                 self._data['firmware'] = self._data['info']['FIRMWARE']
                 self._data['build'] = int(self._data['info']['BUILD_NUMBER'])
@@ -144,7 +127,7 @@ class Dbird(SmartPlugin):
             
         except Exception as e:
                 self.logger.error("Doorbird: Error {}".format(e))
-
+        self.logger.debug("Doorbird:{0}".format(self._data['info']))
         for x in self._data:
             if x in self.messages:
                 self.logger.debug("Doorbird: Update item {1} mit key {0} = {2}".format(x, self.messages[x], self._data[x]))
@@ -201,7 +184,6 @@ class Dbird(SmartPlugin):
     def update_item_read(self, item, caller=None, source=None, dest=None):
         if self.has_iattr(item.conf, 'doorbird'):
             for message in item.get_iattr_value(item.conf, 'doorbird'):
-
                 self.logger.debug("Doorbird: update_item_read {0}".format(message))
             
     def make_snapshot(self):
@@ -263,21 +245,54 @@ class Dbird(SmartPlugin):
                 filepath.unlink
         return files
         
-        
+    def decrypt(self, payload):
+        if len (payload) >60:
+            ident, version,oplimit,mlimit,salt,nonce,ciphertext =  struct.unpack(">3sBll16s8s34s",payload)
+            self.logger.debug("Doorbird: ident{}, version{}, oplimit{}, mlimit{}, salt{}, nonce{}, ciphertext{}".format(ident, version, oplimit, mlimit, salt, nonce, ciphertext))
+            #ident =     payload[:3]     #3  \xDE\xAD\xBE
+            base64_bytes = base64.b64encode(ident)
+            base64_message = base64_bytes.decode('ascii')
+            #print(base64_message) #ergibt 3q2+!
+            if base64_bytes.decode('ascii') == '3q2+':
+                #print("will entschluesseln")
+                streched = nacl.pwhash.argon2i.kdf(32,bytes(self._password[:5]), salt, opslimit=oplimit, memlimit=mlimit,encoder=nacl.encoding.RawEncoder)
+                #print(streched)
+                cipher = ChaCha20_Poly1305.new(key=streched, nonce=nonce)
+                #print(cipher)
+                plaintext = cipher.decrypt(ciphertext)
+                #print(plaintext)
+                user, event, timestamp = struct.unpack(">6s8sL",plaintext)
+                self.logger.debug("Doorbird: user {},event {},timestamp {}".format(user,event,timestamp))
+                decryped_user = plaintext[:6]
+                decryped_event = plaintext[6:14]
+                timestamp = plaintext[14:18]
+                self.logger.debug("Doorbird: decryped_user {}, decryped_event{}, timestamp{}".format(decryped_user,decryped_event,timestamp))
+               # if user == self.username[:6]:
+               #     return True
+                #else:
+                #    return False
+            else:
+                self.logger.debug("Doorbird: Falscher Header")
+                return False
+                
     def UDPServer(self):
         ip=''
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Allow incoming broadcasts
-        s.setblocking(False) # Set socket to non-blocking mode
-        s.bind(('', self.udp_port)) #Accept Connections on port
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 5) # Allow incoming broadcasts
+        s.setblocking(True) # Set socket to non-blocking mode
+        s.bind(('', self._udpport)) #Accept Connections on port
         while True:
             try:
-                message, address = s.recvfrom(1024) # Buffer size is 8192. Change as needed.
-                print('message',message)
-                self.UDPMessageParser(message.decode("utf-8") )
+                message, adress= s.recvfrom(2048) # Buffer size is 8192. Change as needed.
+                self.logger.debug('Doorbird: message raw {}'.format(message))
+                try:
+                    self.decrypt(message)
+                except Exception as e:
+                    self.logger.debug("Doorbird: Cannot Decrypt {}".format(e))
             except Exception as e:
-                self.logger.info("Doorbird: Cannot connect to UDP Port.",e)
-                
+                self.logger.debug("Doorbird: UDP Server Cannot connect.{}".format(e))
+            #finally:
+            #    s.close()
 # ------------------------------------------
 #    Webinterface Methoden
 # ------------------------------------------   
