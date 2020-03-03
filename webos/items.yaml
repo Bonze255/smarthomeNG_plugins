@@ -1,0 +1,95 @@
+tv:
+    live:
+    
+        powerstatus:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'powerstatus'
+        volume:
+            type: num
+            visu_acl: rw
+            lgwebos: 'get_volume'
+        mute:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'get_mute'
+        channel_list:
+            type: list
+            visu_acl: rw
+            lgwebos: 'get_channel_list'
+        current_programm:
+            type: str
+            visu_acl: rw
+            lgwebos: 'get_current_programm'
+    befehl:
+        power_off:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'power_off'
+        notify:
+            type: str
+            visu_acl: rw
+            lgwebos: 'notify'
+        launch_app:
+            type: str
+            visu_acl: rw
+            lgwebos: 'launch_app'
+        play:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'play'
+        pause:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'pause'
+        stop:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'stop'
+        rewind:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'rewind'
+        fast_forward:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'fast_forward'
+        volume_up:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'volume_up'
+        volume_down:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'volume_down'
+        set_volume:
+            type: num
+            visu_acl: rw
+            lgwebos: 'set_volume'
+        set_mute:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'set_mute'
+        channel_up:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'channel_up'
+        channel_down:
+            type: bool
+            visu_acl: rw
+            lgwebos: 'channel_down'
+
+     
+    info:
+        modell:
+            type: str
+            visu_acl: rw
+            lgwebos: 'model_name'
+        major_version:
+            type: str
+            visu_acl: rw
+            lgwebos: 'major_ver'
+        minor_version:
+            type: str
+            visu_acl: rw
+            lgwebos: 'minor_ver'
