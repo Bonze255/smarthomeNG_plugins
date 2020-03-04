@@ -266,6 +266,11 @@ class Dbird(SmartPlugin):
                 decryped_user = plaintext[:6]
                 decryped_event = plaintext[6:14]
                 timestamp = plaintext[14:18]
+                if decryped_event == 'motion':
+                    self._data['motion_sensor_state'] = True
+                else if decryped_event == 'doorbell':
+                    self._data['doorbell_state'] = True
+                    
                 self.logger.debug("Doorbird: decryped_user {}, decryped_event{}, timestamp{}".format(decryped_user,decryped_event,timestamp))
                # if user == self.username[:6]:
                #     return True
