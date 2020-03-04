@@ -5,7 +5,7 @@ It uses pynacl and chacha20-poly1305to encrypt the UDP Ethernet Pakets.
 ## Supported by the Plugin
 * Make snapshots
 * Get the images as array for visualisation with smarthomeNG
-* Get Motion/Doorbell Events
+* Get Motion/Doorbell Events from UDP Broadcasts
 
 ## Supported from doorbirdpy
 * get the URLs for
