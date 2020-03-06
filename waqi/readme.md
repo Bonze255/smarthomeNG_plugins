@@ -1,5 +1,5 @@
 ## Gets WAQI Data air pollution data from https://waqi.info/de/
-** get Free Token
+** get Free Token from https://aqicn.org/data-platform/token/#/
 
 ** search city url
 
