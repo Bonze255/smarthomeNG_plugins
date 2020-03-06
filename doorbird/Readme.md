@@ -3,9 +3,9 @@ it is based on https://pypi.org/project/DoorBirdPy/. Its possible to make a snap
 It uses pynacl and chacha20-poly1305to encrypt the UDP Ethernet Pakets.
 
 ## Supported by the Plugin
-* Make snapshots
+* Make snapshots, when you want, and trigger them from other sources
 * Get the images as array for visualisation with smarthomeNG
-* Get Motion/Doorbell Events from UDP Broadcasts
+* Get Motion/Doorbell Events from UDP Broadcasts, so you can trigger all you want
 
 ## Supported from doorbirdpy package
 * get the URLs for
@@ -19,3 +19,5 @@ It uses pynacl and chacha20-poly1305to encrypt the UDP Ethernet Pakets.
   * Check request
   * Info request
   * RTSP
+
+## all functions are available with SmarthomeNG out of the box
