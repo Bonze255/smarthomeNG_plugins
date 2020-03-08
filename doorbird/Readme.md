@@ -21,3 +21,5 @@ It uses pynacl and chacha20-poly1305to encrypt the UDP Ethernet Pakets.
   * RTSP
 
 ## all functions are available with SmarthomeNG out of the box
+## Tested with 
+ * DoorBird D2101V
