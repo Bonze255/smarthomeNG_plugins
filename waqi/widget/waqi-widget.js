@@ -14,16 +14,16 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 
 	_update: function(response) {
 		var names = {
-			pm25: "PM<sub>2.5</sub>",
+			pm25: "PM<sub>2.5</sub> [µg/m³]",
 			pm10: "PM<sub>10</sub> [µg/m³]",
 			o3: "Ozon [µg/m³]",
 			no2: "Stickstoffdioxid [µg/m³]",
 			no: "Stickstoffoxid [µg/m³]",
 			so2: "Schwefeldioxid [µg/m³]",
-			co2: "Kohlenstoffdioxid",
+			co2: "Kohlenstoffdioxid [µg/m³]",
 			t: "Temperatur [°C]",
 			w: "Windgeschwindigkeit [m/s]",
-			wg: "Windgeschwindigkeit [m/s]",
+			wg: "Globalstrahlung [mW/cm²]",
 			r: "Rain (precipitation) [mm]",
 			h: "Luftfeuchtigkeit [%]",
 			d: "Taupunkt",
@@ -54,7 +54,9 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 			{a:400,b:"#4e0016", f:'#FFFFFF'},
 			];
 		var items = String(this.options.item).explode();
-		var tr = "<table style=width:100%;><tr>"
+		//var tr = "<table style=width:100%;><tr>"
+		var style = 'app';
+		var tr = '<div style="width:100%;">';
 		var font_color;
 		var bg_color;
 		//werte aus datenarray durchgehen
@@ -86,13 +88,13 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 					}else if (spectrum[i] < 4){
 						bg_color = '#1877f2';
 					}
-				}else if (specie =='wg'){
+				}else if (specie =='w'){
 					if(spectrum[i] >= 10.8){
 						bg_color = '#fe9633';
 					}else if (spectrum[i] >=20,8){
-						bg_color = '#ca0035';
-					}else{
 						bg_color = '#00787e';
+					}else{
+						bg_color = '#ca0035';
 					}
 				}else{
 					font_color = '#FFFFFF';
@@ -104,10 +106,32 @@ $.widget("sv.weather_waqi", $.sv.widget, {
 			
 			
 			var name = names[specie];
-			tr+="<td style=min-width:30px;font-size:120%; text-align: left;>"+name+"</td><td style=color:"+font_color+";background-color:"+bg_color+";min-width:30px;font-size:100%;>"+response[0][specie]+"</td></tr>";
-			
+			//visualisation app style
+			if(style == 'app'){
+				if (specie != 'city'){
+					tr+="<span style='box-sizing:border-box; border:2px solid #444444; border-radius:6%; float:left; padding:1%; margin:1%; min-width:31%; height: 50%;text-align: center; color:"+font_color+";background-color:"+bg_color+"'>";
+					tr+="<span style='font-size:150%;'>"+response[0][specie]+"</span></br>";
+					tr+="<span style='font-size:70%;'>"+name+"</span> ";
+					tr+="</span></span>";
+				}else{
+					
+					tr+="<span style='box-sizing:border-box; border:2px solid #444444;float:left;padding:1%; margin:1%;border-radius:6%; min-width:31%; height: 100%;text-align: center; color:"+font_color+";background-color:"+bg_color+"'>";
+					tr+="<span style='font-size:80%;'>"+response[0][specie]+"</span></br>";
+					tr+="</span></span>";
+				}
+			//visualisation table
+			}else{
+				if (specie == 'city'){
+					tr+="<span style='float:left; width:80%;height: 30px;font-size:120%;text-align: left;'>"+name+" - "+response[0][specie]+"</span>";
+					
+				}else{
+					//tr+="<td style=min-width:30px;font-size:120%; text-align: left;>"+name+"</td><td style=color:"+font_color+";background-color:"+bg_color+";min-width:30px;font-size:100%;>"+response[0][specie]+"</td></tr>";
+					tr+="<span style='float:left; width:80%;height: 30px;font-size:120%; text-align: left;color:"+font_color+";background-color:"+bg_color+";'>"+name+"</span><span style='height: 30px;float:right; text-align: right; color:"+font_color+";background-color:"+bg_color+";width:20%;font-size:120%;'>"+response[0][specie]+"</span></br>";
+				}
+			}
 		}
-		tr+="</table>";
+		//tr+="</table>";
+		tr+="</div>";
 		$('.waqi-table').html(tr);
 
 		
