@@ -6,6 +6,7 @@ It uses pynacl and chacha20-poly1305to encrypt the UDP Ethernet Pakets.
 * Make snapshots, when you want, and trigger them from other sources
 * Get the images as array for visualisation with smarthomeNG
 * Get Motion/Doorbell Events from UDP Broadcasts, so you can trigger all you want
+* So this Plugin can used, when you need a doorbird A1061 or A1081, because you can used any KNX Hardware instead
 
 ## Supported from doorbirdpy package
 * get the URLs for
