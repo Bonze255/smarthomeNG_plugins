@@ -5,6 +5,7 @@
 
 Includes SMmarthomeNG widget, with app or table style.
 <img style="align: center;" src="https://raw.githubusercontent.com/Bonze255/smarthomeNG_plugins/master/waqi/widget.png"/>
-You can filter the Widget data with the key attribut.
+
+You can filter the Widget data with the key attribut. So, only the attributes you want, would drawed.
 
 more infos at https://aqicn.org/json-api/doc/
