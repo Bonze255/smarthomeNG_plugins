@@ -16,6 +16,7 @@ $.widget("sv.status_robvac", $.sv.widget, {
 		//console.log('test_saugroboter_update');
 		//console.log(items);
 		//console.log(response);
+		$(".vac_status").empty();
 		if (response[2] == 'Charging'){
 			$(".vac_status").prepend(" -+ Charging +-");
 		}else if (response[2] == 'Cleaning'){
@@ -25,6 +26,7 @@ $.widget("sv.status_robvac", $.sv.widget, {
 			$(".vac_status").prepend(" -+ ERROR +-");
 			$(".vac_status").prepend(" Code: "+ items[3]);
 		};
+		$(".vac_status").append("</br> <hr>");
 	},
 	
 	_repeat: function() {
