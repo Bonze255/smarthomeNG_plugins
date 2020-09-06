@@ -1,0 +1,176 @@
+/**
+* A widget to display a vacuumcleaner
+*
+* @param {id=} unique id for this widget (optional)   
+* @param {item} an item for batteriestatus
+* @param {item} an item for luefterspeed 
+* @param {item} an item for the area  
+* @param {item} an item for the cleaningtime
+* @param {item} an item for the carpetmode
+* @param {item} an item for the carpetmode_low
+* @param {item} an item for the carpetmode_integral
+* @param {item} an item for the carpetmode_high 
+* @param {item} an item for the error_code
+* @param {item} an item for the active
+* @param {item} an item for the status  
+* @param {item} an item for the dnd_status
+* @param {item} an item for the start
+* @param {item} an item for the stop
+* @param {item} an item for the pause
+* @param {item} an item for the home
+* @param {item} an item for the spot_clean
+* @param {item} an item for the find
+* @param {item} an item for the total_area
+* @param {item} an item for the total_runs
+* @param {item} an item for the total_time
+* @param {item} an item for the brush_main_left
+* @param {item} an item for the brush_side_left
+* @param {item} an item for the filter_left   
+* @param {item} an item for the sensor_left
+* @param {item} an item for the cleanrun0 complete
+* @param {item} an item for the run0 date
+* @param {item} an item for the run0 start time   
+* @param {item} an item for the run0 end time
+* @param {item} an item for the run0 cleaned area
+* @param {item} an item for the run0 cleaning time 
+* @param {item} an item for the cleanrun1 complete
+* @param {item} an item for the run1 date
+* @param {item} an item for the run1 start time   
+* @param {item} an item for the run1 end time
+* @param {item} an item for the run1 cleaned area
+* @param {item} an item for the run1 cleaning time 
+* @param {item} an item for the cleanrun2 complete
+* @param {item} an item for the run2 date
+* @param {item} an item for the run2 start time   
+* @param {item} an item for the run2 end time
+* @param {item} an item for the run2 cleaned area
+* @param {item} an item for the run2 cleaning time 
+* @param {item} an item for the cleanrun3 complete
+* @param {item} an item for the run3 date
+* @param {item} an item for the run3 start time   
+* @param {item} an item for the run3 end time
+* @param {item} an item for the run3 cleaned area
+* @param {item} an item for the run3 cleaning time 
+
+*
+**/
+{% macro saugroboter(id, item_batt, item_speed, item_area, item_cleaningtime, item_carpetmode, item_carpetmode_low, item_carpetmode_integral, item_carpetmode_high,item_error_code,
+					item_active, item_status, item_dnd_status, item_start, item_stop, item_pause, item_home, item_spot_clean, item_find, item_total_area, item_total_runs, item_total_time, 
+					item_brush_main_left, item_brush_side_left, item_filter_left, item_sensor_left, 
+					run0_complete, run0_date,run0_start, run0_end, run0_area, run0_time,
+					run1_complete, run1_date,run1_start, run1_end, run1_area, run1_time,
+					run2_complete, run2_date,run2_start, run2_end, run2_area, run2_time,
+					run3_complete, run3_date,run3_start, run3_end, run3_area, run3_time) %}
+	{% set uid = uid(page, id) %}
+	{% import "basic.html" as basic %}
+	{% import "icon.html" as icon %}
+	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="status.robvac"
+		data-item="{{ item_area}}, {{ item_cleaningtime }}, {{ item_status}}, {{ item_error_code}}">
+		<div align="left">
+		
+			<b>Aktueller Zustand: </b></br>
+				<div align="left">
+					{%if item_dnd_status == true %}
+						<span style="font-weight:bold;color:#FF6600;">Programmierter DND Modus ist aktiv!</span><br/>
+					{% endif %}
+				</div>
+			<span class = "vac_status" style="font-weight:bold; color:#00FF00;">
+				
+			/**
+			{% if 'Cleaning' in item_status %}
+			*	 - reinigt - </br>
+			*	Fläche: {{ basic.print('', item_area ,'m²') }} | 
+			*	Zeit: {{ basic.print('', item_cleaningtime, 'h') }}
+			*{% elseif Charging in item_status %}
+			*	{{ basic.print('', item_status , '','','','green') }}
+			*{% elseif 'Pause' in item_status %}
+			*	Vacuum Cleaner paused
+			*{% elseif 'Charger disconnected' in item_status %}	
+			*	Vacuum Cleaner not at home
+			*{% endif %}
+			**/
+			{% if item_error_code != 0 %}
+				Fehler {{ basic.print('', item_error_code , '','','','red') }}!
+			{% endif %}
+			<hr>
+			</span>
+			
+			
+			Batterie: {{ icon.battery('', '', item_batt ,'0','100') }}<span id= "battstatus"> {{ basic.print('',item_batt,'') }} %</span> | 
+			{{ basic.print('', item_batt, 'script', '$("#battstatus").css("color", (VAR1 == 100) ? "#00FF00" : "#FF6600")') }}
+			Lüfter: {{ icon.volume('', '',item_speed,'0','100') }} {{ basic.print('', item_speed, ' %', '', [75,90],['', '#FF6600', 'red']) }}
+
+
+		</div>
+		<hr>
+		<div >
+			<div style="float:right; background-image:url(dropins/vacuum.png); opacity: 0.7; border-radius: 4px; z-index: 0; width: 175px; height: 150px;">
+			</div>
+			
+			<div align="left">
+				<b>Steuerung:</b></br>
+				{{ basic.stateswitch('', item_start,	 '','audio_play.svg', 'audio_play.svg', '', '', '') }}
+				{{ basic.stateswitch('', item_stop, 	'' ,'audio_stop.svg', 'audio_stop.svg', '', '', '') }}
+				{{ basic.stateswitch('', item_pause, 	'', 'audio_pause.svg', 'audio_pause.svg', '', '', '') }}
+				{{ basic.stateswitch('', item_home,		'', 'jquery_home.svg', 'jquery_home.svg', '', '', '', '') }}
+				{{ basic.stateswitch('', item_spot_clean,'','','', 								'Spot','', '', 'mini', '', '', '') }}
+				{{ basic.stateswitch('', item_find, 	'',	'','', '? find ?','', '0', 'mini', '', '', '') }} <br/>
+				<hr>	
+				<b>Gesamt &sum;:</b></bR>
+				Fläche: {{ basic.print('', item_total_area, 'm²') }} | Reinigungen: {{ basic.print('', item_total_runs,'') }} | 
+				Laufzeit: {{ basic.print('', item_total_time, 'h')}}</br>
+				<b>Verbleibend:</b></bR>
+				Bürste Seite: {{ basic.print('', item_brush_side_left, 'h', '', ['1','3'],['red', '#FF6600', '']) }} -/Haupt: {{ basic.print('', item_brush_main_left, 'h', '', ['1','3'],['red', '#FF6600', '']) }} | 
+				Filter: {{ basic.print('', item_filter_left, 'h', '', ['1','3'],['red', '#FF6600', '']) }} | Sensor: {{ basic.print('', item_sensor_left, 'h', '', ['1','3'],['red', '#FF6600', '']) }}</br>
+				
+			</div>
+		<hr>
+		<b>Letzte Reinigungen:</b></br>
+		<div>
+			<table align = "center" style="width:100%">
+			  <tr>
+				<th><b> Datum </b></th>
+				<th><b> Start </b> </th>
+				<th><b> Ende </b> </th>
+				<th><b> Fläche </b></th>
+				<th><b> Dauer </b></th>
+
+			  </tr>
+			 <tr id="clean_run0">{{ basic.print('', run0_complete, 'script', '$("#clean_run0").css("color", (VAR1 == 0) ? "#FF6600" : "#00FF00")') }}
+				<td > {{ basic.print('', run0_date, '') }}</td>
+				<td > {{ basic.print('', run0_start, '') }}</td>
+				<td > {{ basic.print('', run0_end, '') }}</td>
+				<td > {{ basic.print('', run0_area, 'm³') }}</td>
+				<td > {{ basic.print('', run0_time, 'h') }}</td>
+
+			  </tr>
+			  <tr id="clean_run1">{{ basic.print('', run1_complete, 'script', '$("#clean_run1").css("color", (VAR1 == 0) ? "#FF6600" : "#00FF00")') }}
+				<td > {{ basic.print('', run1_date, '') }}</td>
+				<td > {{ basic.print('', run1_start, '') }}</td>
+				<td > {{ basic.print('', run1_end, '') }}</td>
+				<td > {{ basic.print('', run1_area, 'm³') }}</td>
+				<td > {{ basic.print('', run1_time, 'h') }}</td>
+			  </tr>
+			  <tr id="clean_run2">
+				{{ basic.print('', run2_complete, 'script', '$("#clean_run2").css("color", (VAR1 == 0) ? "#FF6600" : "#00FF00")') }}
+				<td > {{ basic.print('', run2_date, '') }}</td>
+				<td > {{ basic.print('', run2_start, '') }}</td>
+				<td > {{ basic.print('', run2_end, '') }}</td>
+				<td > {{ basic.print('', run2_area, 'm³') }}</td>
+				<td > {{ basic.print('', run2_time, 'h') }}</td>
+				
+			  </tr>
+			  <tr id="clean_run3">
+				{{ basic.print('', run3_complete, 'script', '$("#clean_run3").css("color", (VAR1 == 0) ? "#FF6600" : "#00FF00")') }}
+				<td > {{ basic.print('', run3_date, '') }}</td>
+				<td > {{ basic.print('', run3_start, '') }}</td>
+				<td > {{ basic.print('', run3_end, '') }}</td>
+				<td > {{ basic.print('', run3_area, 'm³') }}</td>
+				<td > {{ basic.print('', run3_time, 'h') }}</td>
+				
+			  </tr>
+			</table>
+		</div>
+		</div>
+	</div>
+{% endmacro %}
