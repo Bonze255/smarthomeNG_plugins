@@ -19,7 +19,19 @@ import urllib
 import doorbirdpy
 import requests
 from pathlib import Path
-#from StringIO import StringIO
+
+import os
+import socket
+import binhex
+import sys
+import json
+import sys
+import base64
+from base64 import b64decode
+
+from Crypto.Cipher import ChaCha20_Poly1305
+import nacl.pwhash
+
 from datetime import datetime
 
 from lib.model.smartplugin import *
@@ -46,7 +58,7 @@ class Dbird(SmartPlugin):
         self.retry_count_max = 3
         self.retry_count = 1
         self._connected = False
-        self.udp_port = 4244
+        self._udpport = 35344
         
         #OPen the UDP Port
         self.DoorbirdUDPServer = threading.Thread(target = self.UDPServer)
@@ -109,34 +121,41 @@ class Dbird(SmartPlugin):
                 self._data['wifi_mac'] = str(self._data['info']['WIFI_MAC_ADDR'])
                 self._data['relays'] = self._data['info']['RELAYS']
                 self._data['device_type'] = self._data['info']['DEVICE-TYPE']  
-            self._data['doorbell_state'] = self._doorbird.doorbell_state()
-            self._data['motion_sensor_state'] = self._doorbird.motion_sensor_state()
+            # self._data['doorbell_state'] = self._doorbird.doorbell_state()
+            #self._data['motion_sensor_state'] = self._doorbird.motion_sensor_state()
             self._data['live_video'] = '<img width=75% src = "'+self._doorbird.live_video_url+'"/>'
             self._data['rtsp_live_video'] = '<img width=75% src = "'+self._doorbird.rtsp_live_video_url+'"/>'
             self._data['live_image'] = '<img width=75% src = "'+self._doorbird.live_image_url+'"/>'
             for i in range(1,self._max_files ):
                 motion.append(self._doorbird.history_image_url(i, 'motionsensor'))
                 doorbell.append(self._doorbird.history_image_url(i, "doorbell"))
-            self.logger.debug("Doorbird: Doorbell images {}".format(doorbell))
-            self.logger.debug("Doorbird: Motion images {}".format(motion))
+            #self.logger.debug("Doorbird: Doorbell images {}".format(doorbell))
+            #self.logger.debug("Doorbird: Motion images {}".format(motion))
             self._data['motion_images'] = motion
             self._data['doorbell_images'] = doorbell
             self._data['snapshot_images'] = self.get_files()
             self._data['html_viewer'] = self._doorbird.html5_viewer_url
             
             
+            ##Update Items
+            self.update_items()
         except Exception as e:
                 self.logger.error("Doorbird: Error {}".format(e))
-        self.logger.debug("Doorbird:{0}".format(self._data['info']))
+        #self.logger.debug("Doorbird:{0}".format(self._data['info']))
+       
+    # ----------------------------------------------------------------------------------------------
+    # Items mit liste self._data vergleichen und updaten 
+    # ----------------------------------------------------------------------------------------------
+    def update_items(self):
         for x in self._data:
             if x in self.messages:
                 self.logger.debug("Doorbird: Update item {1} mit key {0} = {2}".format(x, self.messages[x], self._data[x]))
                 item = self.messages[x]
                 item(self._data[x], 'Doorbird')
-                
 
+    
     # ----------------------------------------------------------------------------------------------
-    # Befehl senden, wird aufgerufen wenn sich item  mit robvac ändert!
+    # Befehl senden, wird aufgerufen wenn sich item  mit doorbird ändert!
     # ----------------------------------------------------------------------------------------------
     def update_item(self, item, caller=None, source=None, dest=None):
         if caller != 'Dbird':
@@ -165,6 +184,11 @@ class Dbird(SmartPlugin):
                         
                         self.get_files()#aufruf snapshot    
                         self.logger.debug("Doorbird: Send MESSAGE {},  RESPONSE {} ".format(message, response))
+                elif message == "cleanup":
+                    if value == True:
+                        item(False, 'Doorbird')
+                        self.cleanup_folder()
+                        self.logger.debug("Doorbird: Cleaned up Snapshot Folder!")
     def run(self):
         self.alive = True
 
@@ -210,7 +234,7 @@ class Dbird(SmartPlugin):
             self.logger.debug("Doorbird: Snapshot-Path does not exist!")
         
     def get_files(self):
-        image_dir = self._image_dir#'/var/www/html/smartVISU2.9/doorbirdimg/'
+        image_dir = self._image_dir
         filename = Path(image_dir)
         path = filename.absolute().as_uri() 
         self.logger.debug("Doorbird: Image Path{}".format(path))
@@ -219,7 +243,7 @@ class Dbird(SmartPlugin):
             try:
                 for file in filename.glob('*.jpg'):
                     files.append(self._webserver_image_dir+str(file.name)+'')
-                    self.logger.debug("Doorbird: Snapshot-FIle found {}".format(file.name))
+                    #self.logger.debug("Doorbird: Snapshot-FIle found {}".format(file.name))
                 files.sort()
                 if len(files)>0:
                     self.logger.debug("Doorbird: Found files {}".format(files))
@@ -245,51 +269,58 @@ class Dbird(SmartPlugin):
                 filepath.unlink
         return files
         
+    def cleanup_folder(self):
+        image_dir = self._image_dir
+        filename = Path(image_dir)
+        for file in filename.glob('*.jpg'):
+            self.logger.debug("Doorbird: Found file {}".format(file))
+            file.unlink()
+        
     def decrypt(self, payload):
-        if len (payload) >60:
-            ident, version,oplimit,mlimit,salt,nonce,ciphertext =  struct.unpack(">3sBll16s8s34s",payload)
+    
+        if len (payload) >= 70:
+        
+            ident, version,oplimit,mlimit,salt,nonce,ciphertext = struct.unpack(">3sBll16s8s34s",payload)
             self.logger.debug("Doorbird: ident{}, version{}, oplimit{}, mlimit{}, salt{}, nonce{}, ciphertext{}".format(ident, version, oplimit, mlimit, salt, nonce, ciphertext))
             #ident =     payload[:3]     #3  \xDE\xAD\xBE
             base64_bytes = base64.b64encode(ident)
-            base64_message = base64_bytes.decode('ascii')
-            #print(base64_message) #ergibt 3q2+!
-            if base64_bytes.decode('ascii') == '3q2+':
-                #print("will entschluesseln")
-                streched = nacl.pwhash.argon2i.kdf(32,bytes(self._password[:5]), salt, opslimit=oplimit, memlimit=mlimit,encoder=nacl.encoding.RawEncoder)
-                #print(streched)
+            self.logger.debug("Doorbird: base64_bytes {}".format(base64_bytes.decode('ascii')))
+            if base64_bytes.decode('ascii') == '3q2+' and len(salt) == 16:
+                self.logger.debug("Doorbird: Ready to decrypt")
+                streched = nacl.pwhash.argon2i.kdf(32,self._password[:5].encode('utf'), salt, opslimit=oplimit, memlimit=mlimit,encoder=nacl.encoding.RawEncoder)
                 cipher = ChaCha20_Poly1305.new(key=streched, nonce=nonce)
-                #print(cipher)
                 plaintext = cipher.decrypt(ciphertext)
-                #print(plaintext)
-                user, event, timestamp = struct.unpack(">6s8sL",plaintext)
-                self.logger.debug("Doorbird: user {},event {},timestamp {}".format(user,event,timestamp))
-                decryped_user = plaintext[:6]
-                decryped_event = plaintext[6:14]
-                timestamp = plaintext[14:18]
-                if decryped_event == 'motion':
-                    self._data['motion_sensor_state'] = True
-                elif decryped_event == 'doorbell':
-                    self._data['doorbell_state'] = True
+                decrypted_user= (struct.unpack(">6s",plaintext[:6])[0]).decode()
+                #Username check
+                if decrypted_user == self._username[:6]:
+                    decrypted_event = (struct.unpack(">8s",plaintext[6:14])[0].strip()).decode()
+                    timestamp = struct.unpack(">L",plaintext[14:18])[0]
+                    self._data['event_time'] = datetime.fromtimestamp(timestamp+(3600*1))##convert it to MEZ
                     
-                self.logger.debug("Doorbird: decryped_user {}, decryped_event{}, timestamp{}".format(decryped_user,decryped_event,timestamp))
-               # if user == self.username[:6]:
-               #     return True
-                #else:
-                #    return False
+                    if decrypted_event == 'motion':
+                        self._data['motion_sensor_state'] = True
+                        self.logger.info("Doorbird: Motion trigger erkannt")
+                    elif decrypted_event == '1':##doorbell
+                        self._data['doorbell_state'] = True
+                        self.logger.info("Doorbird: Doorbell trigger erkannt")
+                    self.logger.info("Doorbird: User {} triggered, while {} at {}".format(decrypted_user,decrypted_event,self._data['event_time']))
+                    self.update_items()
+                    self._data['motion_sensor_state'] = False
+                    self._data['doorbell_state'] = False
             else:
                 self.logger.debug("Doorbird: Falscher Header")
                 return False
                 
     def UDPServer(self):
         ip=''
+        self.logger.debug("Doorbird: Opening UDP Port")
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 5) # Allow incoming broadcasts
         s.setblocking(True) # Set socket to non-blocking mode
-        s.bind(('', self._udpport)) #Accept Connections on port
+        s.bind((ip, self._udpport)) #Accept Connections on port
         while True:
             try:
                 message, adress= s.recvfrom(2048) # Buffer size is 8192. Change as needed.
-                self.logger.debug('Doorbird: message raw {}'.format(message))
                 try:
                     self.decrypt(message)
                 except Exception as e:
