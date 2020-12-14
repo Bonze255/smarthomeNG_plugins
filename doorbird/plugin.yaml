@@ -12,7 +12,7 @@ plugin:
     
 # documentation: 
     version: 1.0.0             # Plugin version
-    sh_minversion: 1.4           # minimum shNG version to use this plugin
+    sh_minversion: 1.6           # minimum shNG version to use this plugin
     multi_instance: False          # plugin supports multi instance
     classname: Dbird               # class containing the plugin
     restartable: unknown
@@ -110,6 +110,10 @@ item_structs:
             visu_acl: rw
             type: bool
             doorbird: 'snapshot'
+        Cleanup:
+            visu_acl: rw
+            type: bool
+            doorbird: 'cleanup'
     infos:
         name: 'Infos'
         firmware:
