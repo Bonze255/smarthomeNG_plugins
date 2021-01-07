@@ -1,4 +1,4 @@
-# Metadata for the Xiaomi Saugroboter
+# Metadata for the Waqi
 plugin:
     # Global plugin attributes
     type: gateway                  # plugin type (gateway, interface, protocol, system, web)
@@ -14,7 +14,7 @@ plugin:
     version: 1.0.0             # Plugin version
     sh_minversion: 1.4           # minimum shNG version to use this plugin
     multi_instance: False          # plugin supports multi instance
-    classname: WaQi                # class containing the plugin
+    classname: Waqi                # class containing the plugin
     restartable: unknown
    
 plugin_functions: NONE
@@ -30,87 +30,45 @@ parameters:
     token: 
         de: 'token'
         en: 'token'
-    city:
-        de: 'cityurl'
-        en: 'cityurl'
-    cycle:
-        de: 'read cycle'
-        en: 'read cycle'
-    alarm:
-        de: 'alarm value'
-        en: 'alarm value'
-item_structs: 
- waqi:
+    city: 
+        de: 'Stadt von welcher die Daten stammen sollen'
+        en: 'City where the data come from'
+    cycle: 
+        de: 'Stadt von welcher die Daten stammen sollen'
+        en: 'City where the data come from'
+    alarm: 
+        de: 'Alarmschwelle'
+        en: 'value to trigger the alarm_items'
+    keys: 
+        de: 'liste der Daten, die ins data item übernommen werden soll(Hauptsächlich für Widgetanzeige)'
+        en: 'list of data for the widget item (data) '   
+item_structs:
+waqi-service: 
     stickstoffdioxide:
         name: 'no2'
         type: num
-        waqi: 'no2'
-        visu_acl: rw
-        database: 'yes'
+        waqi: 'no2'    
     ozon:
         name: 'o3'
         type: num
         waqi: 'o3'
-        visu_acl: rw
-        database: 'yes'
-        alarm:
-            type: bool
-            waqi: 'o3_alarm'
-            visu_acl: rw
-            database: 'yes'
     luftdruck:
         name: 'p'
         type: num
         waqi: 'p'
-        visu_acl: rw
-        database: 'yes'
-    feinstaub10:
+    feinstaub:
         name: 'pm10'
         type: num
         waqi: 'pm10'
-        visu_acl: rw
-        database: 'yes'
-        alarm:
-            type: bool
-            waqi: 'pm10_alarm'
-            visu_acl: rw
-            database: 'yes'
-    feinstaub25:
-        name: 'pm25'
-        type: num
-        waqi: 'pm25'
-        visu_acl: rw
-        database: 'yes'
-        alarm:
-            type: bool
-            waqi: 'pm25_alarm'
-            visu_acl: rw
-            database: 'yes'
     windgeschwindigkeit:
         name: 'wg'
         type: num
         waqi: 'wg'
-        visu_acl: rw
-        database: 'yes'
     temperatur:
         name: 't'
         type: num
         waqi: 't'
-        visu_acl: rw
-        database: 'yes'
     luftqualitaet:
         name: 'aqi'
         type: num
         waqi: 'aqi'
-        visu_acl: rw
-        database: 'yes'
-        alarm:
-            type: bool
-            waqi: 'aqi_alarm'
-            visu_acl: rw
-            database: 'yes'
-    data:
-        name: 'Austausch mit Widget'
-        type: foo
-        visu_acl: rw
-        waqi: 'data'

@@ -27,11 +27,12 @@ class Waqi(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
     PLUGIN_VERSION="1.0.0"
     
-    def __init__(self, smarthome,city='/', token='',cycle=20, alarm=150):
+    def __init__(self, smarthome,city='/', token='',cycle=20, alarm=150, keys =''):
         self._city= str(city)
         self._cycle = int(cycle)
         self._token = str(token)
         self._alarm = alarm
+        self._keys = keys
         self._sh = smarthome
         self.logger = logging.getLogger(__name__)
         self.messages = {}
@@ -72,7 +73,7 @@ class Waqi(SmartPlugin):
                 self._data['data']['city'] = str(r.json()['data']['city']['name'])
                 
                 
-                if self._data['aqi'] >= self._alarm:
+                if self._data['aqi'] >= int(self._alarm):
                     self._data['aqi_alarm'] = True
                 else:
                     self._data['aqi_alarm'] = False
@@ -98,7 +99,7 @@ class Waqi(SmartPlugin):
                     self._data['so2_alarm'] = False 
                     
                 
-                self.logger.debug("Waqi: data{}".format(self._data))
+                #self.logger.debug("Waqi: data{}".format(self._data))
                 
             else:
                  self.logger.error("Waqi: Reading ERROR from Waqi")
@@ -106,12 +107,11 @@ class Waqi(SmartPlugin):
                 self.logger.error("Waqi: Error {}".format(e))
         #resort data
         resorted = {}
-        for key in sorted(self._data.keys()):
-            resorted[key] = self._data[key]
-        
-        #if self.firstrun == True:
-        #    self.logger.debug("Waqi: available data {}".format(self._data))
-        #    self.firstrun = False
+        for key in sorted(self._data['data'].keys()):
+            #Filterung, nach gewunschten Werte zum widget
+            if key in self._keys or self._keys =='':
+                resorted[key] = self._data['data'][key]
+        self._data['data'] = resorted
             
         for x in self._data:
             if x in self.messages:
