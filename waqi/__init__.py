@@ -31,7 +31,7 @@ class Waqi(SmartPlugin):
         self._city= str(city)
         self._cycle = int(cycle)
         self._token = str(token)
-        self._alarm = alarm
+        self._alarm = int(alarm)
         self._keys = keys
         self._sh = smarthome
         self.logger = logging.getLogger(__name__)
@@ -61,48 +61,59 @@ class Waqi(SmartPlugin):
         self._data['data'] = {}
         try:
             r = requests.get(self.base_url + f"/feed/"+self._city+"/?token="+self._token)
+            
             if r.status_code == 200:
-                for key in r.json()['data']['iaqi']:
-                    self.logger.debug("Waqi: request {}".format(key))
-                    self._data[key] = int(r.json()['data']['iaqi'][key]['v'])
-                    self._data['data'][key] = int(r.json()['data']['iaqi'][key]['v'])
+                if len(r.json()['data']['iaqi'].keys())>0:
+                    for key in r.json()['data']['iaqi']:
+                        self.logger.debug("Waqi: request {}".format(key))
+                        self._data[key] = int(r.json()['data']['iaqi'][key]['v'])
+                        self._data['data'][key] = int(r.json()['data']['iaqi'][key]['v'])
+                        
+                    self._data['aqi'] = int(r.json()['data']['aqi'])
+                    self._data['city'] = str(r.json()['data']['city']['name'])
+                    self._data['data']['aqi'] = int(r.json()['data']['aqi'])
+                    self._data['data']['city'] = str(r.json()['data']['city']['name'])
                     
-                self._data['aqi'] = int(r.json()['data']['aqi'])
-                self._data['city'] = str(r.json()['data']['city']['name'])
-                self._data['data']['aqi'] = int(r.json()['data']['aqi'])
-                self._data['data']['city'] = str(r.json()['data']['city']['name'])
-                
-                
-                if self._data['aqi'] >= int(self._alarm):
-                    self._data['aqi_alarm'] = True
-                else:
-                    self._data['aqi_alarm'] = False
                     
-                if (    ('pm25' in self._data.keys()) and (self._data['pm25'] >= int(self._alarm))   ):
-                    self._data['pm25_alarm'] = True
-                else:
-                    self._data['pm25_alarm'] = False
+                    if self._data['aqi'] >= int(self._alarm):
+                        self._data['aqi_alarm'] = True
+                    else:
+                        self._data['aqi_alarm'] = False
+                        
+                    if (    ('pm25' in self._data.keys()) and (self._data['pm25'] >= self._alarm)   ):
+                        self._data['pm25_alarm'] = True
+                    else:
+                        self._data['pm25_alarm'] = False
+                        
+                    if(('o3' in self._data.keys()) and (self._data['o3'] >= self._alarm)  ):
+                        self._data['o3_alarm'] = True
+                    else:
+                        self._data['o3_alarm'] = False
+                        
+                    if (('no2' in self._data.keys()) and (self._data['no2'] >= self._alarm)    ):
+                        self._data['no2_alarm'] = True
+                    else:
+                        self._data['no2_alarm'] = False
                     
-                if(('o3' in self._data.keys()) and (self._data['o3'] >= int(self._alarm))  ):
-                    self._data['o3_alarm'] = True
-                else:
-                    self._data['o3_alarm'] = False
+                    if (('so2' in self._data.keys()) and (self._data['so2'] >= self._alarm)    ):
+                        self._data['so2_alarm'] = True
+                    else:
+                        self._data['so2_alarm'] = False 
                     
-                if (    ('no2' in self._data.keys()) and (self._data['no2'] >= int(self._alarm))    ):
-                    self._data['no2_alarm'] = True
-                else:
-                    self._data['no2_alarm'] = False
-                
-                if (    ('so2' in self._data.keys()) and (self._data['so2'] >= int(self._alarm))    ):
-                    self._data['so2_alarm'] = True
-                else:
-                    self._data['so2_alarm'] = False 
                     
-                
-                #self.logger.debug("Waqi: data{}".format(self._data))
-                
+                    #forecast
+                    for key in r.json()['data']['forecast']['daily']:
+                        self.logger.debug("Waqi: request {}".format(key))
+                        for i in range(0, len(r.json()['data']['forecast']['daily'][key])):
+                            self._data['forecast_'+key+'_'+str(i)+'_min'] = int(r.json()['data']['forecast']['daily'][key][i]['min'])
+                            self._data['forecast_'+key+'_'+str(i)+'_max'] = int(r.json()['data']['forecast']['daily'][key][i]['max'])
+                            self._data['forecast_'+key+'_'+str(i)+'_avg'] = int(r.json()['data']['forecast']['daily'][key][i]['avg'])
+                            self._data['forecast_'+key+'_'+str(i)+'_date'] = r.json()['data']['forecast']['daily'][key][i]['day']
+                    
+                    self.logger.debug("Waqi: Read data {}".format(self._data))
             else:
-                 self.logger.error("Waqi: Reading ERROR from Waqi")
+                self.logger.debug("Waqi: data{}".format(r.json()))
+                self.logger.error("Waqi: Reading ERROR from Waqi")
         except Exception as e:
                 self.logger.error("Waqi: Error {}".format(e))
         #resort data
