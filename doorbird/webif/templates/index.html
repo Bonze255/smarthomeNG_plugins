@@ -4,32 +4,6 @@
 {% set use_bodytabs = true %}
 {% set tabcount = 2 %}
 {% set tab1title = 'aktive items' %}
-      <script type = "text/javascript">
-	  
-	  
-            // When the testform is submitted...
-           $("#stop").click(function() {
-				console.log( "Handler for .stop called." );
-				
-               // post the form values via AJAX...
-               $.post('action', {name: 'stop'}, function(data) {
-				console.log($("#id"));
-                  // and set the title with the result
-                  $("#title").html(data['title']) ;
-               });
-               return false ;
-            });
-			
-		function reload_table(){
-			$.post('reload', {reload: 'on'});
-		 }
-		setInterval( function () {
-			reload_table();
-		}, 30000 );
-		
-     
-      </script>
-
 
 {% block headtable %}
 <table class="table table-striped table-hover">
@@ -85,19 +59,37 @@
 		</table>
 	</div>
 </div>
-<strong>Letzte Aufnahmen:</strong><br/>
-	{% for imageurl in image_snapshots %}
-		{{ imageurl }}
+<strong>Letzte Bewegungsmelder Aufnahmen:</strong><br/>
+<div>
+	{% for imageurl in p._data['motion_images'] %}
+		{{ '<img src="' ~ imageurl ~ '" style="width:15%"/>' }}
 	{% endfor %}
+	<hr>
+</div>
+<div>
+<strong>Letzte Klingel Aufnahmen:</strong><br/>
+	{% for imageurl in p._data['doorbell_images'] %}
+		{{ '<img src="' ~ imageurl ~ '" width="15%"/>' }}
+	{% endfor %}
+</div>
+<div>
+<strong>Letzte Snapshot Aufnahmen:</strong><br/>
+	<div style="display: flex; align-items: center; justify-content: center;">
+	{% for imageurl in image_snapshots %}
+		{{ '<img style="flex: 15%; " src="' ~ imageurl ~ '" width="15%"/>' }}
+	{% endfor %}
+	</div>
+</div>
 {% endblock bodytab1 %}
 
-{% set tab21title = "<strong>Live</strong>" %}
+
+{% set tab2title = "<strong>Live App</strong>" %}
 {% block bodytab2 %}
 
 
 <div class="table-responsive" style="margin-left: 2px; margin-right: 2px;" class="row">
-	<div class="col-sm-12"> 
-	<iframe src="http://192.168.178.94/bha-api/view.html" width="100%" height="100%"></iframe> 
+	<div class="col-sm-12" style ="height:800px; width:100%;" > 
+		<iframe src={{ p._data['html_viewer'] }} style="height:100%; width:100%;"></iframe> 
 	
 	</div>
 </div>
