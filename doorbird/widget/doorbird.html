@@ -1,0 +1,74 @@
+
+
+/**
+* A widget to display doorbird images
+*
+* @param {id=} unique id for this widget (optional)
+* @param {text} a directory where the pictures are located
+**/
+{% macro doorbird_history(id, item_snapshots,item_doorbell, item_motion,  buttons, item_relay1, item_relay2, item_night, slideTime, maxFiles) %}
+	{% set uid = uid(page, id) %}
+	 
+	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="doorbird.history" data-item="{{ item_snapshots}}, {{item_motion}},{{item_doorbell}} " data-time="{{slideTime| default('2000')}}" data-max-files="{{maxFiles| default('10')}}">
+			
+			<div  style="position: relative;">
+				<!-- Full-width images with number text -->
+				<div class="image-container"></div>
+				<!-- Next and previous buttons -->
+				<a class="btnprev" onclick="#">&#10094;</a>
+				<a class="btnnext" onclick="#">&#10095;</a>
+			</div>
+			<!-- Image text -->
+			<div class="caption-container">
+				<p id="doorbird-caption"></p>
+			</div>
+			<!-- Control Buttons -->
+			<div class="controls" data-role="controlgroup" data-type="horizontal">
+					<a id="btnpause" href="#" class="ui-btn ui-midi ui-corner-all ui-btn-inline ui-nodisc-icon">
+						<img class="icon" src="icons/ws/audio_stop.svg" alt="stop">
+					</a>
+					<a id="btnplay" href="#" class="ui-btn ui-midi ui-corner-all ui-btn-inline ui-nodisc-icon">
+						<img class="icon" src="icons/ws/audio_play.svg" alt="resume">
+					</a>
+						<a id="btnsnapshots" href="#" class="ui-btn ui-midi ui-corner-all ui-btn-inline ui-nodisc-icon">
+						Snapshots
+					</a>
+					<a id="btnhistory" href="#" class="ui-btn ui-midi ui-corner-all ui-btn-inline ui-nodisc-icon">
+						History
+					</a>
+					<a id="btnmotion" href="#" class="ui-btn ui-midi ui-corner-all ui-btn-inline ui-nodisc-icon">
+						Bewegungsmelder
+					</a>
+			</div>
+			<!-- Thumbnail images -->
+			<div class="rows">
+			</div>
+			
+		</div>
+{% endmacro %}
+
+{% macro doorbird_live(id, item_trigger_doorbell, item_trigger_motion, item_live_audio,item_live_video, item_night, item_snapshot, item_relay1, item_relay2, texte) %}
+	{% set uid = uid(page, id) %}
+	 
+	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="doorbird.live" data-item="{{ item_trigger_doorbell | default('False')}},{{ item_trigger_motion | default('False')}},{{ item_live_audio | default('False')}},{{ item_live_video| default('False')}},{{ item_night| default('False')}},{{ item_snapshot| default('False')}}, {{item_relay1| default('False')}},{{item_relay2| default('False')}}" btntext ="{{ implode(texte)}}">
+		<div class="doorbird-live-container" style="position:relative;"> 
+
+		</div>
+					{% import "basic.html" as basic %}
+			<div data-role="controlgroup" data-type="horizontal" style="width:100%;left:0em;">
+			{% if item_night is not empty %}
+				{{ basic.stateswitch('', item_night, 'midi', '', '', texte[0]) }}
+			{% endif %}
+			
+			{% if item_snapshot is not empty %}
+					{{ basic.stateswitch('', item_snapshot, 'midi', '', '', texte[1]) }}
+			{% endif %}
+			{% if item_relay1 is not empty %}
+					{{ basic.stateswitch('', item_relay1, 'midi', '', '', texte[2]) }}
+			{% endif %}
+			{% if item_relay2 is not empty %}
+					{{ basic.stateswitch('', item_relay2, 'midi', '', '', texte[3]) }}
+			{% endif %}
+			</div>
+	</div>
+{% endmacro %}
