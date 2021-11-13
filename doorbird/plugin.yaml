@@ -11,8 +11,8 @@ plugin:
     keywords: communication, iot
     
 # documentation: 
-    version: 1.0.0             # Plugin version
-    sh_minversion: 1.6           # minimum shNG version to use this plugin
+    version: 1.1.0             # Plugin version
+    sh_minversion: 1.4           # minimum shNG version to use this plugin
     multi_instance: False          # plugin supports multi instance
     classname: Dbird               # class containing the plugin
     restartable: unknown
@@ -40,12 +40,21 @@ parameters:
     password: 
         de: 'Passwort für die Kommunikation'
         en: 'password for Communication' 
-    image_dir: 
-        de: 'Pfad, wo snapshots gespeichert werden soll'
-        en: 'Acess Path to save the pictures from snapshot '
+    image_snapshots_dir: 
+        de: 'Order wo Snapshots gespeichert werden soll'
+        en: 'Folder name to save the pictures from snapshot '
+    image_doorbell_dir: 
+        de: 'Order wo Klingelbilder gespeichert werden soll'
+        en: 'Folder name to save the doorbell pictures'
+    image_motion_dir: 
+        de: 'Order wo Bewegungsmelder-Bilder gespeichert werden soll'
+        en: 'Folder name to save the motion pictures'
     webserver_image_dir: 
         de: 'Pfad zumm Zugriff auf Ordner über webserver z.B: http://192.168.178.91/smartVisu2.9/doorbirdimg/'
-        en: 'Access Url to Image files'
+        en: 'Webserver Path to access Image files'
+    image_path: 
+        de: 'Speicherpfad der Bilderordner: 
+        en: 'Direct path to acess the saved pictures'
     max_files: 
         de: 'Anzahl der zu speichernden Snapshots'
         en: 'max pictures from snapshot function'
@@ -70,6 +79,11 @@ item_structs:
             type: list
             visu_acl: rw
             doorbird: 'doorbell_images'
+        doorbell_images:
+            name: 'Doorbell Images'
+            type: list
+            visu_acl: rw
+            doorbird: 'doorbell_images'
         motion_images:
             name: 'Motion Images'
             type: list
@@ -83,11 +97,14 @@ item_structs:
             name: 'Live video Url'
             type: str
             doorbird: 'live_video'
+        live_audio:
+            name: 'Live audio Url'
+            type: str
+            doorbird: 'live_audio'
         rtsp_live_video:
             name: 'RTSP Live video Url'
             type: str
             doorbird: 'rtsp_live_video'
-      
     befehl:
         name: 'Befehle zum Doorbird'
         Relay1:
@@ -110,7 +127,7 @@ item_structs:
             visu_acl: rw
             type: bool
             doorbird: 'snapshot'
-        Cleanup:
+        cleanup:
             visu_acl: rw
             type: bool
             doorbird: 'cleanup'
@@ -131,3 +148,4 @@ item_structs:
         device_type:
             type: str
             doorbird: 'device_type'
+

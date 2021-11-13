@@ -5,8 +5,8 @@
 ####################################################################################
 ######################################################################################
 #
-#  Copyright 2020 Version-1    Manuel Holländer
-
+#  Copyright 2020 Version-1.0.0    Manuel Holländer
+#  Copyright 2021 Version-1.1.0    Manuel Holländer
 ####################################################################################
 
 import logging
@@ -40,9 +40,9 @@ from lib.item import Items
 
 class Dbird(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
-    PLUGIN_VERSION="1.0.0"
+    PLUGIN_VERSION="1.1.0"
     
-    def __init__(self, smarthome,ip='127.0.0.1', username='', password='', read_cycle=60, image_dir='', max_files = 10, webserver_image_dir=''):
+    def __init__(self, smarthome,ip='127.0.0.1', username='', password='', read_cycle=60, image_path='',image_snapshots_dir='', image_motion_dir='',image_doorbell_dir='', max_files = 10, webserver_image_dir=''):
         self._ip = str(ip)
         self._username = str(username)
         self._password = str(password)
@@ -51,7 +51,10 @@ class Dbird(SmartPlugin):
         self._sh = smarthome
         self.logger = logging.getLogger(__name__)
         self._webserver_image_dir = str(webserver_image_dir)
-        self._image_dir = str(image_dir)
+        self._image_snapshots_dir = str(image_snapshots_dir)
+        self._image_doorbell_dir = str(image_doorbell_dir)
+        self._image_motion_dir = str(image_motion_dir)
+        self._image_path = str(image_path)
         self._data = {}
         self.messages = {}
         self._lock = threading.Lock()
@@ -67,7 +70,15 @@ class Dbird(SmartPlugin):
         if self._username == '' or self._password == '':
             self.logger.error("Doorbird: No Username/Password for Communication given, Plugin would not start!")
         else:
-            self.logger.debug("Doorbird: Plugin Start!")
+           
+            
+            if self._image_snapshots_dir == '':
+                self.logger.debug("Doorbird: No snapshop dir given, use Cloud only!")
+            if self._image_doorbell_dir == '':  
+                self.logger.debug("Doorbird: No doorbell dir given, use Cloud only!")
+            if self._image_motion_dir == '':   
+                self.logger.debug("Doorbird: No motion dir given, use Cloud only!")
+            
             self._doorbird = doorbirdpy.DoorBird(self._ip, self._username, self._password)
             self._sh.scheduler.add('Doorbird read cycle', self._read, prio=5, cycle=self._cycle)
             try:
@@ -82,12 +93,13 @@ class Dbird(SmartPlugin):
                         self._data['wifi_mac'] = str(self._data['info']['WIFI_MAC_ADDR'])
                         self._data['relays'] = self._data['info']['RELAYS']
                         self._data['device_type'] = self._data['info']['DEVICE-TYPE']  
-
+                    
+                    self._data['live_audio'] = "http://"+self._ip+"/bha-api/audio-receive.cgi"
                     self._data['motion_sensor_state'] = self._doorbird.motion_sensor_state()
-                    self._data['live_video'] = '<img width=75% src = "'+self._doorbird.live_video_url+'"/>'
-                    self._data['rtsp_live_video'] = '<img width=75% src = "'+self._doorbird.rtsp_live_video_url+'"/>'
-                    self._data['live_image'] = '<img width=75% src = "'+self._doorbird.live_image_url+'"/>'
-                    self._data['snapshot_images'] = self.get_files()
+                    self._data['live_video'] = '<img width="75%" src = "'+self._doorbird.live_video_url+'">'
+                    self._data['rtsp_live_video'] = '<img width="75%" src = "'+self._doorbird.rtsp_live_video_url+'">'
+                    self._data['live_image'] = '<img width="75%" src = "'+self._doorbird.live_image_url+'">'
+                    self._data['snapshot_images'] = self.get_files(self._image_snapshots_dir)
                     
                     
             except Exception as e:
@@ -121,19 +133,28 @@ class Dbird(SmartPlugin):
                 self._data['wifi_mac'] = str(self._data['info']['WIFI_MAC_ADDR'])
                 self._data['relays'] = self._data['info']['RELAYS']
                 self._data['device_type'] = self._data['info']['DEVICE-TYPE']  
-            # self._data['doorbell_state'] = self._doorbird.doorbell_state()
-            #self._data['motion_sensor_state'] = self._doorbird.motion_sensor_state()
             self._data['live_video'] = '<img width=75% src = "'+self._doorbird.live_video_url+'"/>'
             self._data['rtsp_live_video'] = '<img width=75% src = "'+self._doorbird.rtsp_live_video_url+'"/>'
             self._data['live_image'] = '<img width=75% src = "'+self._doorbird.live_image_url+'"/>'
-            for i in range(1,self._max_files ):
-                motion.append(self._doorbird.history_image_url(i, 'motionsensor'))
-                doorbell.append(self._doorbird.history_image_url(i, "doorbell"))
-            #self.logger.debug("Doorbird: Doorbell images {}".format(doorbell))
-            #self.logger.debug("Doorbird: Motion images {}".format(motion))
-            self._data['motion_images'] = motion
-            self._data['doorbell_images'] = doorbell
-            self._data['snapshot_images'] = self.get_files()
+            
+            if self._image_snapshots_dir != '':
+                self._data['snapshot_images'] = self.get_files(self._image_snapshots_dir)
+            else:
+                self._data['snapshot_images'] = ""
+           
+            if self._image_doorbell_dir != '':  
+                self._data['doorbell_images'] = self.get_files(self._image_doorbell_dir)
+            else:
+                for i in range(1,self._max_files ):
+                    doorbell.append(self._doorbird.history_image_url(i, "doorbell"))
+                self._data['doorbell_images'] = doorbell
+            
+            if self._image_motion_dir != '':   
+                self._data['motion_images'] = self.get_files(self._image_motion_dir)
+            else:
+                for i in range(1,self._max_files ):
+                    motion.append(self._doorbird.history_image_url(i, 'motionsensor'))
+                self._data['motion_images'] = motion
             self._data['html_viewer'] = self._doorbird.html5_viewer_url
             
             
@@ -141,8 +162,7 @@ class Dbird(SmartPlugin):
             self.update_items()
         except Exception as e:
                 self.logger.error("Doorbird: Error {}".format(e))
-        #self.logger.debug("Doorbird:{0}".format(self._data['info']))
-       
+
     # ----------------------------------------------------------------------------------------------
     # Items mit liste self._data vergleichen und updaten 
     # ----------------------------------------------------------------------------------------------
@@ -180,14 +200,14 @@ class Dbird(SmartPlugin):
                 elif message == "snapshot":
                     if value == True:
                         item(False, 'Doorbird')
-                        response = self.make_snapshot()
+                        response = self.make_snapshot(self._image_snapshots_dir)
                         
-                        self.get_files()#aufruf snapshot    
+                        self.get_files(self._image_snapshots_dir)#aufruf snapshot    
                         self.logger.debug("Doorbird: Send MESSAGE {},  RESPONSE {} ".format(message, response))
                 elif message == "cleanup":
                     if value == True:
                         item(False, 'Doorbird')
-                        self.cleanup_folder()
+                        self.cleanup_folder(self._image_snapshots_dir)
                         self.logger.debug("Doorbird: Cleaned up Snapshot Folder!")
     def run(self):
         self.alive = True
@@ -210,13 +230,16 @@ class Dbird(SmartPlugin):
             for message in item.get_iattr_value(item.conf, 'doorbird'):
                 self.logger.debug("Doorbird: update_item_read {0}".format(message))
             
-    def make_snapshot(self):
-        image_dir = self._image_dir#'/var/www/html/smartVISU2.9/doorbirdimg/'
+    def make_snapshot(self, folder):
+        """
+        Make a Snapshotimage from video stream, and save it to given Folder
+        """
+        image_dir = os.path.join(self._image_path, folder)
         filename = Path(image_dir)
-        path = filename.absolute().as_uri() 
+      
         now = datetime.now()
         timestamp = datetime.timestamp(now)
-        self.logger.debug("Doorbird: Snapshot time {} path {}".format(timestamp,path))
+        self.logger.debug("Doorbird: Make Snapshot: time {} path {}".format(timestamp,filename))
         if filename.exists():
             try:
                 r = requests.get(self._doorbird.live_image_url, stream=True)
@@ -226,33 +249,48 @@ class Dbird(SmartPlugin):
                         for chunk in r.iter_content(1024):
                             file.write(chunk)
                 else:
-                    self.logger.debug("Doorbird: Snapshot error ")
-            except:
-                
+                    self.logger.debug("Doorbird: making Snapshot in {}  error ".format(folder))
+            except Exception as err:
                 self.logger.debug("Doorbird: error {}".format(err))
         else:
-            self.logger.debug("Doorbird: Snapshot-Path does not exist!")
+            self.logger.debug("Doorbird: Snapshot-Path {} does not exist!".format(filename))
         
-    def get_files(self):
-        image_dir = self._image_dir
+        try:
+            files = []
+            self.logger.debug("Doorbird: delete filename {}".format(filename))
+            for file in filename.glob('*.jpg'):
+                files.append(os.path.join(filename,str(file.name)))
+            self.delete_files(files)
+            self.logger.debug("Doorbird: Try to Delete IN {}; while more than {} !".format(files)) 
+            self.logger.debug("Doorbird: Try to Delete IN {}; while more than {} !".format(folder, self._max_files)) 
+        except Exception as e:
+            self.logger.debug("Doorbird: ERROR Try to Delete IN {}; while more than {} !, {}".format(folder, self._max_files,e))       
+   
+    def get_files(self, folder):
+        """
+        Get Files from given Folder
+        """
+        image_dir = os.path.join(self._image_path, folder)
         filename = Path(image_dir)
-        path = filename.absolute().as_uri() 
-        self.logger.debug("Doorbird: Image Path{}".format(path))
+        self.logger.debug("Doorbird: filename {}".format(filename))
+        #absolutpfad  zum script
+        path = filename.absolute().as_uri()
+
         files = []
         if filename.exists():
             try:
                 for file in filename.glob('*.jpg'):
-                    files.append(self._webserver_image_dir+str(file.name)+'')
+                    files.append(self._webserver_image_dir+folder+str(file.name)+'')
                     #self.logger.debug("Doorbird: Snapshot-FIle found {}".format(file.name))
-                files.sort()
+                files.sort(reverse=True)
                 if len(files)>0:
                     self.logger.debug("Doorbird: Found files {}".format(files))
-                    self._data['snapshot_images'] = files
+                    #self._data['snapshot_images'] = files
                     #self.delete_files(files)
                     return files
                 else:
                     return []
-            except:
+            except Exception as err:
                 
                 self.logger.debug("Doorbird: error {}".format(err))
         else:
@@ -260,24 +298,33 @@ class Dbird(SmartPlugin):
             return []
             
     def delete_files(self, files):
+        """
+        Delete files when more than max_files in the given folder
+        """
         files.sort(reverse=True)
-        image_dir = self._image_dir
+
         #delete older files!
-        if len(files)-1 > self._max_files:
-            for file in range(self._max_files, len(files)-1):
+        if len(files) > self._max_files:
+            for file in range(self._max_files, len(files)):
                 filepath = Path(files[file])
-                filepath.unlink
+                self.logger.debug("Doorbird: Try to Delete IN {} - {};".format(file, filepath))       
+                filepath.unlink()
         return files
         
-    def cleanup_folder(self):
-        image_dir = self._image_dir
+    def cleanup_folder(self, folder):
+        """
+        Delete all Files from a given folder
+        """
+        image_dir = os.path.join(self._image_path, folder)
         filename = Path(image_dir)
         for file in filename.glob('*.jpg'):
             self.logger.debug("Doorbird: Found file {}".format(file))
             file.unlink()
         
     def decrypt(self, payload):
-    
+        """
+        Decrypt given Payload
+        """
         if len (payload) >= 70:
         
             ident, version,oplimit,mlimit,salt,nonce,ciphertext = struct.unpack(">3sBll16s8s34s",payload)
@@ -297,12 +344,10 @@ class Dbird(SmartPlugin):
                     timestamp = struct.unpack(">L",plaintext[14:18])[0]
                     self._data['event_time'] = datetime.fromtimestamp(timestamp+(3600*1))##convert it to MEZ
                     
-                    if decrypted_event == 'motion':
-                        self._data['motion_sensor_state'] = True
-                        self.logger.info("Doorbird: Motion trigger erkannt")
+                    if decrypted_event == 'motion': 
+                        self._motionAction()
                     elif decrypted_event == '1':##doorbell
-                        self._data['doorbell_state'] = True
-                        self.logger.info("Doorbird: Doorbell trigger erkannt")
+                        self._doorbellAction()
                     self.logger.info("Doorbird: User {} triggered, while {} at {}".format(decrypted_user,decrypted_event,self._data['event_time']))
                     self.update_items()
                     self._data['motion_sensor_state'] = False
@@ -312,6 +357,9 @@ class Dbird(SmartPlugin):
                 return False
                 
     def UDPServer(self):
+        """
+        Start a UDP Server from given port
+        """
         ip=''
         self.logger.debug("Doorbird: Opening UDP Port")
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
@@ -327,8 +375,27 @@ class Dbird(SmartPlugin):
                     self.logger.debug("Doorbird: Cannot Decrypt {}".format(e))
             except Exception as e:
                 self.logger.debug("Doorbird: UDP Server Cannot connect.{}".format(e))
-            #finally:
-            #    s.close()
+
+    def _motionAction(self):
+        """
+        when the motion is detected
+        """
+        self.logger.info("Doorbird: Motion trigger erkannt")
+        self._data['motion_sensor_state'] = True
+        if self._image_doorbell_dir != "":
+            self.make_snapshot(self._image_motion_dir)
+
+        
+    def _doorbellAction(self):
+        """
+        when the doorbell is triggered
+        """
+        self.logger.info("Doorbird: Doorbell trigger erkannt")
+        self._data['doorbell_state'] = True 
+        
+        if self._image_doorbell_dir != "":
+            self.make_snapshot(self._image_doorbell_dir)
+
 # ------------------------------------------
 #    Webinterface Methoden
 # ------------------------------------------   
@@ -424,6 +491,6 @@ class WebInterface(SmartPluginWebIf):
                             p=self.plugin,
                             connection = self.plugin.get_connection_info(),
                             webif_dir = self.webif_dir,
-                            image_snapshots = self.plugin.get_files(),
+                            image_snapshots = self.plugin.get_files(self.plugin._image_snapshots_dir),
                             items=sorted(plgitems, key=lambda k: str.lower(k['_path'])))
                             
