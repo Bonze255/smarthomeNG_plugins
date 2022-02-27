@@ -42,7 +42,7 @@ class Dbird(SmartPlugin):
     ALLOW_MULTIINSTANCE = False
     PLUGIN_VERSION="1.1.0"
     
-    def __init__(self, smarthome,ip='127.0.0.1', username='', password='', read_cycle=60, image_path='',image_snapshots_dir='', image_motion_dir='',image_doorbell_dir='', max_files = 10, webserver_image_dir=''):
+    def __init__(self, smarthome,ip='127.0.0.1', username='', password='', read_cycle=120, image_path='',image_snapshots_dir='', image_motion_dir='',image_doorbell_dir='', max_files = 10, webserver_image_dir=''):
         self._ip = str(ip)
         self._username = str(username)
         self._password = str(password)
@@ -95,7 +95,8 @@ class Dbird(SmartPlugin):
                         self._data['device_type'] = self._data['info']['DEVICE-TYPE']  
                     
                     self._data['live_audio'] = "http://"+self._ip+"/bha-api/audio-receive.cgi"
-                    self._data['motion_sensor_state'] = self._doorbird.motion_sensor_state()
+                    self._data['motion_sensor_state2'] = self._doorbird.motion_sensor_state()
+                    self._data['doorbell_state2'] = self._doorbird.doorbell_state()
                     self._data['live_video'] = '<img width="75%" src = "'+self._doorbird.live_video_url+'">'
                     self._data['rtsp_live_video'] = '<img width="75%" src = "'+self._doorbird.rtsp_live_video_url+'">'
                     self._data['live_image'] = '<img width="75%" src = "'+self._doorbird.live_image_url+'">'
@@ -127,15 +128,19 @@ class Dbird(SmartPlugin):
         try:
             self._data['info'] = self._doorbird.info()
             self.logger.debug("Doorbird: ready cycle {}".format(self._data['info']))
-            if len(self._data['info']) > 1:
-                self._data['firmware'] = self._data['info']['FIRMWARE']
-                self._data['build'] = int(self._data['info']['BUILD_NUMBER'])
-                self._data['wifi_mac'] = str(self._data['info']['WIFI_MAC_ADDR'])
-                self._data['relays'] = self._data['info']['RELAYS']
-                self._data['device_type'] = self._data['info']['DEVICE-TYPE']  
+            #if len(self._data['info']) > 1:
+            #    self._data['firmware'] = self._data['info']['FIRMWARE']
+            #    self._data['build'] = int(self._data['info']['BUILD_NUMBER'])
+            #    self._data['wifi_mac'] = str(self._data['info']['WIFI_MAC_ADDR'])
+            #    self._data['relays'] = self._data['info']['RELAYS']
+            #    self._data['device_type'] = self._data['info']['DEVICE-TYPE']  
             self._data['live_video'] = '<img width=75% src = "'+self._doorbird.live_video_url+'"/>'
             self._data['rtsp_live_video'] = '<img width=75% src = "'+self._doorbird.rtsp_live_video_url+'"/>'
             self._data['live_image'] = '<img width=75% src = "'+self._doorbird.live_image_url+'"/>'
+            
+            #Fix for other special devices
+            self._data['doorbell_state2'] = self._doorbird.doorbell_state()
+            self._data['motion_sensor_state2'] = self._doorbird.motion_sensor_state()
             
             if self._image_snapshots_dir != '':
                 self._data['snapshot_images'] = self.get_files(self._image_snapshots_dir)
@@ -340,18 +345,23 @@ class Dbird(SmartPlugin):
                 decrypted_user= (struct.unpack(">6s",plaintext[:6])[0]).decode()
                 #Username check
                 if decrypted_user == self._username[:6]:
-                    decrypted_event = (struct.unpack(">8s",plaintext[6:14])[0].strip()).decode()
-                    timestamp = struct.unpack(">L",plaintext[14:18])[0]
-                    self._data['event_time'] = datetime.fromtimestamp(timestamp+(3600*1))##convert it to MEZ
-                    
+                    try:
+                        decrypted_event = (struct.unpack(">8s",plaintext[6:14])[0].strip()).decode()
+                        timestamp = struct.unpack(">L",plaintext[14:18])[0]
+                        self._data['event_time'] = datetime.fromtimestamp(timestamp+(3600*1))##convert it to MEZ
+                    except Exception as e:
+                        self.logger.info("Doorbird: Error maybe wrong user? {}".format(e))
+
                     if decrypted_event == 'motion': 
                         self._motionAction()
                     elif decrypted_event == '1':##doorbell
                         self._doorbellAction()
+
                     self.logger.info("Doorbird: User {} triggered, while {} at {}".format(decrypted_user,decrypted_event,self._data['event_time']))
                     self.update_items()
                     self._data['motion_sensor_state'] = False
                     self._data['doorbell_state'] = False
+                
             else:
                 self.logger.debug("Doorbird: Falscher Header")
                 return False
