@@ -28,6 +28,7 @@ It uses pynacl and chacha20-poly1305to encrypt the UDP Ethernet Pakets, which ar
 ## all functions are available with *[SmarthomeNG](https://www.smarthomeng.de)* out of the box
 ## Tested with 
  * DoorBird D2101V
+ * DoorBird D2100E
 
 
 ## Widget
