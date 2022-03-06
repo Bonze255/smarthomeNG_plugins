@@ -354,7 +354,7 @@ class Dbird(SmartPlugin):
 
                     if decrypted_event == 'motion': 
                         self._motionAction()
-                    elif decrypted_event == '1':##doorbell
+                    elif decrypted_event == '1'  or decrypted_event == '101':##doorbell
                         self._doorbellAction()
 
                     self.logger.info("Doorbird: User {} triggered, while {} at {}".format(decrypted_user,decrypted_event,self._data['event_time']))
