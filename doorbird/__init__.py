@@ -351,12 +351,20 @@ class Dbird(SmartPlugin):
                         self._data['event_time'] = datetime.fromtimestamp(timestamp+(3600*1))##convert it to MEZ
                     except Exception as e:
                         self.logger.info("Doorbird: Error maybe wrong user? {}".format(e))
-
+                        return False
+                    
                     if decrypted_event == 'motion': 
                         self._motionAction()
-                    elif decrypted_event == '1'  or decrypted_event == '101':##doorbell
+                    elif decrypted_event.isnumeric():
+                        #kompaktklingelanlagen 1-2-3 Tasten
+                        if int(decrypted_event) < '100':
+                            self._data['triggernumber'] = int(decrypted_event)
+                        #mehrtastenmodule ab 10 Tasten
+                        elif int(decrypted_event) >= '100':
+                            self._data['triggernumber'] = int(decrypted_event[1:])
+                        
                         self._doorbellAction()
-
+                        
                     self.logger.info("Doorbird: User {} triggered, while {} at {}".format(decrypted_user,decrypted_event,self._data['event_time']))
                     self.update_items()
                     self._data['motion_sensor_state'] = False
@@ -374,7 +382,7 @@ class Dbird(SmartPlugin):
         self.logger.debug("Doorbird: Opening UDP Port")
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 5) # Allow incoming broadcasts
-        s.setblocking(True) # Set socket to non-blocking mode
+        s.setblocking(True) # Set socket to blocking mode
         s.bind((ip, self._udpport)) #Accept Connections on port
         while True:
             try:
@@ -445,7 +453,7 @@ class Dbird(SmartPlugin):
             }
         }
         
-        self.logger.debug("Plugin Debug ausgabe '{0}': {1}, {2}, {3}, {4}, {5}".format(self.get_shortname(), webif_dir, self.get_shortname(),config,  self.get_classname(), self.get_instance_name()))
+        self.logger.debug("Doorbird Plugin Debug ausgabe '{0}': {1}, {2}, {3}, {4}, {5}".format(self.get_shortname(), webif_dir, self.get_shortname(),config,  self.get_classname(), self.get_instance_name()))
         # Register the web interface as a cherrypy app
         self.mod_http.register_webif(WebInterface(webif_dir, self),
                                      self.get_shortname(),
@@ -479,7 +487,7 @@ class WebInterface(SmartPluginWebIf):
         self.webif_dir = webif_dir
         self.plugin = plugin
         self.tplenv = self.init_template_environment()
-        self.logger.debug("Plugin : Init Webif")
+        self.logger.debug("Doorbird Plugin : Init Webif")
         self.items = Items.get_instance()
 
     @cherrypy.expose

@@ -1,23 +1,22 @@
 ﻿# Metadata for the Doorbird Plugin
 plugin:
     # Global plugin attributes
-    type: gateway                  # plugin type (gateway, interface, protocol, system, web)
+    type: gateway               # plugin type (gateway, interface, protocol, system, web)
+    subtype: None
     description:                  # Alternative: description in multiple languages
-        de: 'Zugriff auf die Doorbird  Sprechanlage'
-        en: 'Control the Doorbird'
+        de: 'Zugriff auf die Doorbird Sprechanlagen'
+        en: 'Control the Doorbird Entry System'
     maintainer: Bonze
-    state: develop 
-    tester: Bonze 
-    keywords: communication, iot
-    
-# documentation: 
+    state: qa-passed
+    tester: Bonze, ChrAu1202,Jackhammer,TRex
+    keywords: communication, iot, entry system
+    documentation: https://github.com/Bonze255/smarthomeNG_plugins/tree/master/doorbird
     version: 1.1.0             # Plugin version
     sh_minversion: 1.4           # minimum shNG version to use this plugin
     multi_instance: False          # plugin supports multi instance
     classname: Dbird               # class containing the plugin
     restartable: unknown
     
-
 plugin_functions: NONE
     # Definition of plugin functions defined by this plugin (enter 'plugin_functions: NONE', if section should be empty)
     #plugin_functions: NONE
@@ -75,6 +74,10 @@ item_structs:
             name: 'Klingel Status'
             type: bool
             doorbird: 'doorbell_state'
+        klingeltaste:
+            name: 'Klingeltaste Status'
+            type: num
+            doorbird: 'triggernumber'
         bewegungsmelder:
             name: 'Klingel Status'
             type: bool
@@ -92,11 +95,6 @@ item_structs:
             type: list
             visu_acl: rw
             doorbird: 'snapshot_images'
-        doorbell_images:
-            name: 'Doorbell Images'
-            type: list
-            visu_acl: rw
-            doorbird: 'doorbell_images'
         doorbell_images:
             name: 'Doorbell Images'
             type: list
