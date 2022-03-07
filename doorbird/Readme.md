@@ -3,6 +3,7 @@ based on https://pypi.org/project/DoorBirdPy/.
 Its possible to make a snapshot from Live-Stream, switch the Relays1/2 or the Nightvision on and events like 
 Doorbell, Motion.
 So you can use this with knx or mqtt ....
+
 It uses pynacl and chacha20-poly1305to encrypt the UDP Ethernet Pakets, which are listet in the requirements.txt file..
 
 ## Supported by the Plugin
