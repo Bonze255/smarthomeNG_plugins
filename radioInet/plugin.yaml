@@ -1,45 +1,39 @@
-# Metadata for the Smart-Plugin
+﻿# Metadata for the RadioInet Busch und Jäger 8216u Plugin
 plugin:
     # Global plugin attributes
-    type: interface                      # plugin type (gateway, interface, protocol, system, web)
-    description:
-        de: 'Steuern des Busch & Jäger WLan Radio Inet 8612U'
-        en: 'Control of Busch & Jäger WLan Radio Inet 8612U'
+    type: interface                  # plugin type (gateway, interface, protocol, system, web)
+    description:                  # Alternative: description in multiple languages
+        de: 'Zugriff auf Busch und Jaeger Radio Inet 8216u'
+        en: 'Control Busch und Jaeger Wlan Radio 8216u'
     maintainer: Bonze
-#    tester:                        # Who tests this plugin?
-    keywords: modbus tcp
-#    documentation: https://github.com/smarthomeNG/plugins/blob/develop/mqtt/README.md        # url of documentation (wiki) page
-    support: https://knx-user-forum.de/forum/supportforen/smarthome-py/959964-support-thread-für-das-backend-plugin
+    state: develop 
+    tester: Bonze 
+    keywords: communication, iot
+    
+# documentation: 
+    version: 1.0.0             # Plugin version
+    sh_minversion: 1.4           # minimum shNG version to use this plugin
+    multi_instance: False          # plugin supports multi instance
+    classname: RadioInet               # class containing the plugin
+    restartable: unknown
+    
 
-    version: 1.0.0                 # Plugin version
-    sh_minversion: 1.4             # minimum shNG version to use this plugin
-#    sh_maxversion:                 # maximum shNG version to use this plugin (leave empty if latest)
-    multi_instance: True           # plugin supports multi instance
-    classname: RadioInet       # class containing the plugin
+plugin_functions: NONE
+    # Definition of plugin functions defined by this plugin (enter 'plugin_functions: NONE', if section should be empty)
+    #plugin_functions: NONE
 
+logic_parameters: NONE
+    # Definition of logic parameters defined by this plugin (enter 'logic_parameters: NONE', if section should be empty)
+    #logic_parameters: NONE
 
+# Definition of parameters to be configured in etc/plugin.yaml
 parameters:
-
-    device:
-        type: str
-        mandatory: True
-        description:
-            de: 'IP Radios'
-            en: 'Radio IP'
-    cycle:
-        type: int
-        default: 2
-        description:
-            de: 'Dieser Parameter muss normalerweise nicht angegeben werden. Er erlaubt es die Update-Frquenz anzupassen (Standard: alle 2 Sekunden). Mit dem Standardwert werden die Wetterdaten alle 10 Minuten aktualisiert. Das stellt sicher, dass die maximale Tagesmenge von 500 Requests für den gebührenfreien Account nicht überschritten werden, selbst wenn Wetter für zwei Orte oder für die smartVISU angefordert wird.'
-            en: "This parameter usually doesn't have to be specified. It allows to change the update frequency (cycle every 2 seconds). As a standard, the plugin updates the weather data every 10 minutes. This ensures that the maximum of 500 requests for the free-of-charge- account are not maxed out, even if you use wunderground weather for two locations and/or smartVISU."
-        
-    item_subtree:
-        type: str
-        description:
-            de: 'item_subtree definiert den Teilbaum der Items, welchen das Radio Inet plugin während der Updates nach dem radio Attribut durchsuchen soll.'
-            en: 'item_subtree defines the part of the item-tree which the Radio Inet plugin searches during data updates for the radio attribute.
-                If item_subtree is not defined or empty, the whole item-tree is searched, which creates unnecessary overhead vor SmartHomeNG.
-                If you are going to configure multiple instances of the plugin to get the weather report for multiple locations, you have to specify the parameter, or you will get da data mix up.
-                
-                The subtrees defined by item_subtree for the different instances must not intersect!'
-
+    ip: 
+        de: 'IP Adresse B&J  8216U'
+        en: 'IP Adress of B&J  8216U'
+    cycle: 
+        de: 'Standart Zyklus 10'
+        en: 'default cycle time 10'
+    name: 
+        de: 'id für die kommunikation, dient nur der identifizierung'
+        en: 'id für die kommunikation, dient nur der identifizierung'

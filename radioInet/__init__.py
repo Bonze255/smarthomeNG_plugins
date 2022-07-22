@@ -1,349 +1,529 @@
+#
 #!/usr/bin/env python3
 # vim: set encoding=utf-8 tabstop=4 softtabstop=4 shiftwidth=4 expandtab
-#########################################################################
-# Copyright 2018 Manuel Holländer; Version 1.0
-# based on the idea from baba from baba (baba@baba.tk) v1.5 Ip-Symcom
+#
+####################################################################################
+######################################################################################
+#
+#  Copyright 2021 Version-1    Manuel Holländer
 
-#########################################################################
-#  This file is part of SmartHomeNG.
-#  https://github.com/smarthomeNG/smarthome
-#  http://knx-user-forum.de/
-#
-#  SmartHomeNG is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  SmartHomeNG is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with SmartHomeNG. If not, see <http://www.gnu.org/licenses/>.
-#########################################################################
-
-import time
-import re
+####################################################################################
+from jinja2 import Environment, FileSystemLoader
+import cherrypy
+import socket
+import logging
 import threading
 import logging
-import json
 
-from lib.model.smartplugin import SmartPlugin
-# importing the requests library
-import requests
+from lib.model.smartplugin import *
+from lib.module import Modules
+from lib.item import Items
+from math import floor
+
 
 class RadioInet(SmartPlugin):
-    """
-    Main class of the Modbus TCP-Plugin. Does all plugin specific stuff and provides
-    the update functions for the items
-    """
-    ALLOW_MULTIINSTANCE = True
-    PLUGIN_VERSION="1.0.0"
-    
-    # Initialize connection
-    def __init__(self, sh, device='', cycle='', item_subtree=''):
-        """
-        Initalizes the plugin. The parameters described for this method are pulled from the entry in plugin.yaml.
+    ALLOW_MULTIINSTANCE = False
+    PLUGIN_VERSION = "1.0.0"
 
-        :param sh:                 The instance of the smarthome object, save it for later references
-        :param ip:                 hostip
-        :param cycle:              number of seconds between updates
-        """
-        
+    def __init__(self, smarthome, ip='127.0.0.1', name='shNG', cycle='50'):
+        self._ip = str(ip)
+        self._name = str(name)
+        self._cycle = int(cycle)
+        self._sh = smarthome
+        self.stations = {}
+        self.radioData = {}
+        self.itemlist = {}  # keyword: item
+        self.messages = {}
         self.logger = logging.getLogger(__name__)
-        
-        #self.device = self.get_parameter_value('device')
-        self.device = device
-        if self.device  == '':
-            self.logger.error("Radio Inet: No Device Ip specified, plugin is not starting")
-        
-        self.port = 4244
-        #self.cycle = int(self.get_parameter_value('cycle'))
-        self.cycle = int(float(cycle))
-        if self.cycle =='':
-            self.logger.info("Radio Inet: No Cycle specified, default 10s is used")
-            self.cycle = 10
-        
-        #self.item_subtree = str(self.get_parameter_value('item_subtree'))
-        self.item_subtree = str(item_subtree)
-        if self.item_subtree == '':
-            self.logger.warning("RadioInet: item_subtree is not configured, searching complete item-tree instead. Please configure item_subtree to reduce processing overhead" )   
-        
-        self._sh = sh
 
-        #Listen
-        self._itemlist = []                 #puffert die benutzen Radio Items
-        self._data = { #enthält die configdaten
-            'ah':'08', #alarmzeitstunden 0-23
-            'am':'00',           #alarmzeitminuten 0-59
-            'bb':'100',         #backgroundlight 0-100
-            'bl':'1',             #backlight 0-2
-            'dm':'0',             #lcdmodus 0-2
-            'ea':'0',             #alarm 0-1
-            'hr':'18',           #stunden 0-23
-            'mi':'45',           #minuten 0-59
-            'ln':'de',                #sprache de,fr,en,pl
-            'ms':'1',             #audiomodus 0-1
-            'sm':'0',             #soundmodus 0-5
-            'sp':'0',             #netzspannung 0-1
-            'ss':'00',           #timerzeit 0-60
-            'et':'00',            #kurzzeittimer
-            'st':'00',            #kurzzeittimerzeit
-            'es':'00',            #sleeptimer
-            'sw':'0',             #schaltfunktion
-            'tz':'+1',            #zeitdifferenz
-            'zs':'0'              #setzeitzone
-            }
-        self._stations = {} #enthält die stationsangaben
+        if not self.init_webinterface():
+            self._init_complete = False
 
-        #Read first TIme all Configuration Settings
-        self.getConfiguration()
-    def connect(self):
+        self.logger.debug("RadioInet: Plugin Start!")
+        if self._cycle > 30:
+            self._sh.scheduler.add(
+                'RadioInet: Ping Radio', self._read, prio=5, cycle=self._cycle)
+        else:
+            self.logger.warning(
+                "RadioInet: Read Cycle is to fast! < 30s, not starting!")
+
+        self.UDPServerInst = threading.Thread(target=self.UDPServer)
+        self.UDPServerInst.start()
+        # try to read playing status , when shNG is loaded after radioInet has fired some events
+        try:
+            self.sendCommand(self.msgBuilder('PLAYING_MODE'))
+        except Exception as e:
+            self.logger.debug(
+                "RadioINet:Error sending through UDP! {}".format(e))
+    # ----------------------------------------------------------------------------------------------
+    # Daten Lesen, über SHNG bei item_Change
+    # ----------------------------------------------------------------------------------------------
+
+    def groupread(self, ga, dpt):
         pass
-    def disconnect(self):
+
+    # ----------------------------------------------------------------------------------------------
+    # Daten Lesen, zyklisch
+    # ----------------------------------------------------------------------------------------------
+    def _read(self):
+        # self.sendCommand(self.msgBuilder('PLAYING_MODE'))
+        self.sendCommand(self.msgBuilder('POWER_STATUS'))
+        # self.sendCommand(self.msgBuilder('VOLUME'))
         pass
+    # ----------------------------------------------------------------------------------------------
+    # ->Items updaten mit actual data durch plugin!
+    # ----------------------------------------------------------------------------------------------
+
+    def update_items(self):
+        self.logger.debug("RadioInet: Update item {} mit key {}".format(
+            self.messages, self.radioData))
+        for data in self.radioData:
+            if data in self.messages:
+                self.logger.debug("RadioInet: Update item {1} mit key {0} = {2}".format(
+                    data, self.messages[data], self.radioData[data]))
+                item = self.messages[data]
+                item(self.radioData[data], 'RadioInet')
+
+    # ----------------------------------------------------------------------------------------------
+    # items ->dict #wenn item upgedatet wird neu values holen, durch extern
+    # ----------------------------------------------------------------------------------------------
+    def update_item(self, item, caller=None, source=None, dest=None):
+        if caller != 'RadioInet':
+            if self.has_iattr(item.conf, 'radioInet'):
+                message = self.get_iattr_value(item.conf, 'radioInet')
+
+                # boollsche items zurücksetzen
+                if message == "VOLUME_INC":
+                    item(False, 'RadioInet')
+                elif message == "VOLUME_DEC":
+                    item(False, 'RadioInet')
+                elif message == "VOLUME":
+                    message = "VOLUME_ABS"
+                else:
+                    pass
+                value = item()
+
+                # save a Station
+                if message in ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'] or message in ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8']:
+                    id = message[1]
+                    if 's' in message:
+                        s = self.messages[message]()
+                        n = self.messages['n'+str(id)]()
+                    else:
+                        n = self.messages[message]()
+                        s = self.messages['s'+str(id)]()
+
+                    message = 'SAVE_STATION'
+                    value = [id, n, s]
+
+                self.logger.debug(
+                    "RadioInet: item {} mit value {} has changed!".format(message, value))
+                self.sendCommand(self.msgBuilder(message, value))
+
     def run(self):
         self.alive = True
-        self._sh.scheduler.add(__name__, self.readSettings, prio=5, cycle=self.cycle, offset= 1)
+
     def stop(self):
         self.alive = False
-        
+
     def parse_item(self, item):
-        """
-        Default plugin parse_item method. Is called when the plugin is initialized.
-        The plugin can, corresponding to its attribute keywords, decide what to do with
-        the item in future, like adding it to an internal array for future reference
+        if self.has_iattr(item.conf, 'radioInet'):
+            message = self.get_iattr_value(item.conf, 'radioInet')
+            self.logger.debug(
+                "RadioInet: {0} keyword {1}".format(item, message))
 
-        :param item:  The item to process
-        :return:      If the plugin needs to be informed of an items change you should return a call back function
-                      like the function update_item down below. An example when this is needed is the knx plugin
-                      where parse_item returns the update_item function when the attribute knx_send is found.
-                      This means that when the items value is about to be updated, the call back function is called
-                      with the item, caller, source and dest as arguments and in case of the knx plugin the value
-                      can be sent to the knx with a knx write function within the knx plugin.
+            if not message in self.messages:
+                self.messages[message] = item
 
-        """
-        # check for smarthome.py attribute 'radio' in yaml
-        if self.has_iattr(item.conf, 'radio'):
-            radio_function = self.get_iattr_value(item.conf,'radio')
-            self._itemlist.append([item, radio_function, item()]);
-            self.logger.info("RadioInet: parse Radio_inet item: {0} , Function {1}, Value {2}".format(item, radio_function,item()))
             return self.update_item
-        
-    def parse_logic(self, logic):
-        pass
-        
-    def update_item(self, item, caller=None, source=None, dest=None):
-        """
-        Write items values
 
-        This function is called by the core when a value changed, 
-        so the plugin can update it's peripherals
-
-        :param item:   item to be updated towards the plugin
-        :param caller: if given it represents the callers name
-        :param source: if given it represents the source
-        :param dest:   if given it represents the dest
-        """
-        if caller != 'RadioInet':
-            #self.logger.info("RadioInet: Es hat sich ein Item{0} geändert, paramter ist in den Rahmenwerten, zu Radio senden".format(item))
-            self.logger.info("RadioInet: Es hat sich ein Item{0} geändert, paramter ist in den Rahmenwerten, zu Radio senden")
-            
-            radio_function = self.get_iattr_value(item.conf,'radio')
-            self._data[radio_function] = item()
-            self.sendSettings(item,radio_function,item())
-            #self.logger.info("RadioInet: Set {0} to {1}, with  Function-Key {2}".format(item, item(), radio_function))
-            #self.readSettings()           
-
-   
-    def readSettings(self):
-        '''
-        :HTTP VERSION
-        :Read Stations and Values
-        :param function: read all data cyclie from RadioInet
-        :returns: true/false
-        '''
-        self.getStations()
-        self.getConfiguration()
-        self.updateItems()
-        
-    def updateItems(self):
-        #write readed data from the data/stations dict , to the specified items! 
-        #
-        '''
-        :param itemname: path/name of the Item
-        :param data: the data to set the item
-        :param function: the data to set the item
-        :returns: true/false
-        '''
-        #itemlist[item, radio_function, value]
-        #daten/settings = [['ah','08','23'], #alarmzeitstunden 0-23
-
-        self.logger.debug("ItemList {0}".format(self._itemlist))
-        for data in self._data.keys():
-            for items in self._itemlist:#loop the itemlist
-                #self.logger.debug("Item from ItemList {0}".format(items))            
-                if items[1] == data:
-                    items[0](self._data.get(data), 'RadioInet')
-                    self.logger.info("RadioInet: Set {0} to {1}, with Function-Key {2}".format(items[0], items[1], self._data.get(data)))
-                
-        for stations in self._stations.keys():
-            for items in self._itemlist:
-                #self.logger.debug("Item from ItemList {0}".format(items))            
-                if items[1] == stations:
-                    items[0](self._stations.get(stations), 'RadioInet')
-                    self.logger.info("RadioInet: Set {0} to {1}, with Function-Key {2}".format(items[0], items[1], self._stations.get(stations)))
-        #self.findStation()
-        
-    def sendSettings(self, itemname, function, value):
-        """
-        Write items values to the RadioInet
-
-        This function is called by the core when a value changed, 
-        so the plugin can update it's peripherals
-        """
-        
-        
-        ##station editieren =post
-        ##einstellungen speichern = post
-        ##station aufrufen = get
-        
-        if function in ['vp','vm','vo', 'mute'] or function[0]== 'p':
-            if function == "vp":
-                param = {'vp':'  +  '}
-                itemname(value,'RadioInet')
-            elif function =="vm":
-                param = {'vm':'  -  '}
-                itemname(value,'RadioInet')
-            elif function == 'vo':
-                param = {'vo':value,'cv':'Setzen'}
-            elif function == 'mute':
-                param = {'vo':'0','cv':'Setzen'}
-            
-            elif function[0] == 'p':
-                param = {function:' Abspielen '}
-                itemname(True,'RadioInet')
-                
-            
-            self.makeRequest("http://"+self.device+"/de/index.cgi", 'get', param)
-        elif function in ['off']:
-            
-            self.logger.info("RadioINet: Ausschalten")
-            sendCommand('SET', 'RADIO_OFF','shNG')
-           
-        else:#konfiguration post
-            #bb=100&bl=2&dm=0&ms=1&sm=0&ln=de&hr=17&mi=01&zs=0&tz=%2B1&ah=08&am=00&st=00&ss=00&sw=0&sp=0&save=Save
-
-            param = {function:value,"save":"Save"}
-            self.logger.info("RadioINet: Send Setting Parameter-String {0}".format(param))          
-
-            response = requests.post(url = "http://"+self.device+"/de/general.cgi", data = param)
-            self.logger.info("RadioINet:{}".format(response)) 
-            
-    def makeRequest(self,_url,_type, _param):
-        if _type == 'get':
-            if _param != '':
-                response = requests.get(url = _url, params = _param)
-            else:
-                response = requests.get(url = _url)
-        elif _type == 'post':
-            response = requests.post(url = _url, data = _param)
-        
-        if response.status_code > 200:
-            self.logger.debug("RadioINet: Fehler beim Senden des Befehls an das Radio{}".format(response.status_code))
-            return False
-        else:
-            self.logger.info("RadioINet: Senden OK {}".format(response.status_code)) 
-            self.logger.debug("RadioINet: {}".format(response.text)) 
-            return response
-
-    def getConfiguration(self):
-        #get configuration
-        try:
-            self.logger.info("RadioInet: Configuration")
-            response = self.makeRequest("http://"+self.device+"/de/general.shtml", 'get', '')
-            found = re.findall(r".? name=\"(.*?)\".*s.*?value=\"(.*?)\".?", response.text)
-            self.logger.info("RadioInet: alte Konfigurations Daten{0}".format(self._data))
-            for match in found:
-                
-                self._data[match[0]] = match[1] # daten in dict updaten
-                self.logger.debug("RadioInet: gelesene Konfigurations  Daten{0} -> {1}".format(match[0],match[1]))
-                
-            response = self.makeRequest("http://"+self.device+"/de/general.shtml", 'get', '')
-            found = re.findall(r".? name=\"(.*?)\".*?value=\"(.*?)\"\s(.*?)\s*>", response.text)
-            for match in found:
-                if len(match) == 3 and match[2] == 'checked':
-                    self._data[match[0]] = match[1] # daten in dict updaten
-                    self.logger.debug("RadioInet: gelesene Konfigurations Daten{0}{1}".format(match[0],match[1]))
-                    
-            self.logger.info("RadioInet: upgedatete Konfigurations Daten{0}".format(self._data))
-        except OSError:
-            self.logger.error("RadioInet: Fehlerbei der Datenabfrage von {}".format(self.device))
-    def getStations(self):
-        try:
-            response = self.makeRequest("http://"+self.device+"/de/index.shtml", 'get', '')
-            found = re.findall(r".? name=\"(.*?)\".*s.*?value=\"(.*?)\".?", response.text)
-            if len(found) >= 1:
-                for match in found:
-                    if match[0] in ['vo', '--' ]:
-                        self._data[match[0]] = match[1] # daten in dict updaten
-                        self.logger.debug("RadioInet: gelesene Daten{0}{1}".format(match[0],match[1]))
-                    
-            #Search for the Stationurls
-            self.logger.debug("RadioInet: Stationen")
-            response = requests.get("http://"+self.device+"/de/stations.shtml")
-            found = re.findall(r".? name=\"(.*?)\".*s.*?value=\"(.*?)\".?", response.text)
-            for match in found:
-                self.logger.debug("RadioInet: gelesene Daten{0} {1}".format(match[0],match[1]))
-                self._stations[match[0]] = match[1]
-                
-            self.logger.debug("RadioInet: gelesene Daten in Stationsdict! {0}".format(self._stations))
-        except OSError:
-            self.logger.error("RadioInet: Fehlerbei der Datenabfrage von {}".format(self.device)) 
-    def findStation(self):
-        for station in self._stations:
-            if self._stations[station] == self._data['--']:
-                self.logger.info("RadioINet: Stationname found in saved Stations!{0} {1}".format(self._stations[station], self._data['--']))
-                for items in self._itemlist:
-                    if items[1] == station:
-                        self.logger.info("RadioINet: Stationname found in Itemlist{0} {1}".format(items[1],station))
-                        
-                        for childs in items[0].return_children():
-                            radio_function = self.get_iattr_value(childs.conf,'radio')
-                            if radio_function[0] == 'p':
-                                childs(True, 'RadioInet')
-                            self.logger.info("RadioINet: Stationname found in Itemlist{0}".format(childs))
-                      
-                #radio_function = self.get_iattr_value(item.conf,'radio')
-                #for function in radio_function:
-                #    if function == station:
-                #        self.logger.info("RadioINet: {0} {1}".format(station, self._data['--']))
-                break
-                
-    ####
-    ###UDP Commands
-    ###
-    
-    def sendCommand(_command, _value,_id):
+      #UDP######################################################################
+    def sendCommand(self, msg):
         """
         Sends a UDP Message to the Radio
-        :param _command: 
-        :param _value: 
-        :param _id: specifie ID like shNG
         """
-        if checkCommand(_command) == True:
-            MESSAGE = "COMMAND:" + _command + "\r\n" + _value + "\r\nID:" + _id + "\r\n\r\n"
-            self.logger.info("RadioINet: Send {0}".format(MESSAGE))
+        port = 4244
+        try:
+            self.logger.debug("RadioINet: Send {0}".format(msg))
 
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # UDP
-            sock.sendto(MESSAGE.encode(), (UDP_IP, UDP_PORT))
+            ret = sock.sendto(msg.encode(), (self._ip, port))
+            # print(ret)
             sock.close()
-        else:
-            self.logger.info("RadioINet:Command not supported")
+            self.msg = ""
+        except Exception as e:
+            self.logger.debug(
+                "RadioINet:Error sending through UDP! {}".format(e))
 
-    def checkCommand(_command):
-        if _command in ['DISCOVER', 'GET', 'SET', 'PLAY', 'SAVE', 'REMOVE', 'RESET_BLOCK']:
-            return True
-        else:
+    def msgBuilder(self, key, value=None):
+        """
+        generates from the  items/keywords a msg which can send to the Radio
+        :key from Item
+        :value from item
+        """
+        # Direkt Commands
+        discover = 'DISCOVER'
+        userdefined = ['CHANGE_STATION']
+        get = ['POWER_STATUS', 'INFO_BLOCK', 'ALARM_STATUS', 'VOLUME',
+               'PLAYING_MODE', 'ALL_STATION_INFO', 'TUNEIN_PARTNER_ID']
+        set = ['RADIO_POWER', 'VOLUME_ABS', 'VOLUME_INC',
+               'VOLUME_DEC', 'VOLUME_MUTE', 'ALARM_OFF', 'ALARM_SNOOZE']
+        play = ['PLAY_STATION', 'UPNP', 'AUX', 'TUNEIN_INIT', 'TUNEIN_PLAY']
+        save = ['SAVE_STATION']
+        # indirekte commands
+        stations = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8']
+        urls = ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8']
+        try:
+            key = key.upper()
+            if key in discover:
+                msg = key
+                pass
+            if key in get:
+                msg = 'GET\r\n'+key
+                self.logger.debug("RadioInet: GET Message {}".format(key))
+                pass
+            elif key in set:
+                if key == 'RADIO_POWER':
+                    if value == True or value == 'true':
+                        msg = 'RADIO_ON'
+                    else:
+                        msg = 'RADIO_OFF'
+
+                elif key == 'VOLUME_ABS':
+                    # gets a procentual val 100=31 0=0
+                    volume = floor((int(value)/3.22))
+                    msg = "VOLUME_ABSOLUTE:" + str(volume)
+
+                elif key == 'VOLUME_MUTE':
+                    if value == True:
+                        msg = 'VOLUME_MUTE'
+                    else:
+                        msg = 'VOLUME_UNMUTE'
+                    #msg = key
+                else:
+                    msg = key
+                pass
+
+                msg = 'SET\r\n'+msg
+
+            elif key in play:
+                if key == 'PLAY_STATION':
+                    msg = 'PLAY\r\nSTATION:'+str(value)
+                elif key == 'TUNEIN_PLAY':
+                    msg = 'TUNEIN:\r\nURL:' + \
+                        str(value[0])+'\r\n TEXT:' + str(value[1])
+                else:
+                    msg = key
+                    pass
+            elif key in save:
+                if key == 'SAVE_STATION':
+                    msg = 'SAVE\r\nSTATION\r\nCHANNEL:' + \
+                        value[0]+'\r\nNAME:'+value[1]+'\r\nURL:'+value[2]
+                pass
+
+            elif key in stations or key in urls:
+                # daten  aus self.data muss nocha angepasst werden
+                # passende andere daten suchen vom jeweiligen sender und telegrammzusammenbauen
+                # number = key[1] #sendernummer
+                value = []
+                value.append = key[1]
+                for item in sh.items.return_items():
+                    if self.has_iattr(item.conf, 'radioInet'):
+                        val = self.get_iattr_value(item.conf, 'radioInet')
+                        if val == 's' + str(value[0]):
+                            value.append = item()
+                            if self.get_iattr_value(item.conf, 'radioInet') == 'n' + str(value[0]):
+                                value.append = item()
+
+                    msg = 'SAVE\r\nSTATION\r\nCHANNEL:' + \
+                        value[0]+'\r\nNAME:'+value[1]+'\r\nURL:'+value[2]
+            elif key in userdefined:
+                if key == 'CHANGE_STATION':
+                    # with val = 0/1 the channellist can be clicked throu
+                    # get actual channel id
+                    channelid = int(self.radioData['CURRENT_ID'])
+                    if value == True:
+                        # addieren
+                        if channelid < 8:
+                            channelid = channelid + 1
+                        elif channelid == 8:
+                            channelid = 1
+                    elif value == False:
+                        # subdrahieren
+                        if channelid > 1:
+                            channelid = channelid-1
+                        elif channelid == 1:
+                            channelid = 8
+                    msg = 'PLAY\r\nSTATION:'+str(channelid)
+                pass
+            else:
+                self.logger.debug("RadioInet: Command not supported!")
+                msg = ""
+
+            # BUILD MESSAGE TOGETHER!
+            if msg != "":
+                return "COMMAND:" + msg + "\r\nID:" + self._name + "\r\n\r\n"
+
+        except Exception as e:
+            self.logger.debug("RadioInet: Could not Build Message{}".format(e))
+
+    def msgDecryptor(self, msg):
+        """
+        Decrypt a given UDP message from the Radio
+        :msg from Socket Server
+        """
+        channelList = []
+        msgArray = msg.splitlines()
+        self.logger.debug("RadioInet: Message Decryptor {}".format(msgArray))
+        try:
+            if not "NACK" in msgArray[-2]:
+                if "GET" in msgArray[0]:
+                    if self._name in msgArray[2]:
+                        if msgArray[1] == 'ALL_STATION_INFO':
+                            for i in range(1, 9):
+                                channelList.append({'id': msgArray[3*i].split(':')[1], 'chan': msgArray[(
+                                    3*i)+1].split(':')[1], 'url': msgArray[(3*i)+2][4:]})
+                            for i2 in range(0, 8):
+                                values = list(channelList[i2].values())
+                                # self.radioData['id'+str(i2)] = values[0]
+                                # self.radioData['chan'+str(i2)] = values[1]
+                                # self.radioData['url'+str(i2)] = values[2]
+                                self.radioData['id'+str(i2+1)] = values[0]
+                                self.radioData['s'+str(i2+1)] = values[2]
+                                self.radioData['n'+str(i2+1)] = values[1]
+                            #print("sender", channelList)
+                            # aufteilen auf die einzelnen senderitems1
+                            self.logger.debug(
+                                "RadioInet: Sender{}".format(channelList))
+
+                        elif msgArray[1] == 'PLAYING_MODE':
+                            if 'PLAYING STOPPED' in msgArray[3]:
+                                self.logger.debug("RadioInet: not Playing")
+
+                            else:
+                                playingmode = {'playmode': msgArray[3].split(':')[1], 'id': msgArray[4].split(
+                                    ':')[1], 'chan': msgArray[5].split(':')[1], 'url': msgArray[6][4:]}
+                                self.logger.debug(
+                                    "RadioInet: Mode{}".format(playingmode))
+                                #print("Mode", playingmode)
+                                self.radioData['CURRENT_ID'] = playingmode['id']
+                                self.radioData['CURRENT_NAME'] = playingmode['chan']
+                                self.radioData['CURRENT_URL'] = playingmode['url']
+
+                        elif msgArray[1] == 'VOLUME':
+                            vol = {'vol': msgArray[3].split(':')[1]}
+                            #print("VOLUME", vol)
+                            self.logger.debug(
+                                "RadioInet: VOLUME {}".format(vol))
+                            volume = floor((int(vol['vol'])*3.22))
+                            self.radioData['VOLUME'] = volume
+                            pass
+
+                        elif msgArray[1] == 'POWER_STATUS':
+                            energy = {'power_status': msgArray[3].split(
+                                ':')[1], 'energy_mode': msgArray[4].split(':')[1]}
+                            #print("Power Status", energy)
+                            self.logger.debug(
+                                "RadioInet: Power status {}".format(energy))
+                            if energy['power_status'] == 'ON':
+                                self.radioData['POWER'] = True
+                                self.radioData['POWER_STATUS'] = True
+                                # when radio  returning is playing, then read Volume, all stations
+                                self.sendCommand(self.msgBuilder('VOLUME'))
+                                # if self.radioData['s1'] == '' or self.radioData['s2'] == '' or self.radioData['s3'] == '' or self.radioData['s4'] == '':
+                                self.sendCommand(
+                                    self.msgBuilder('ALL_STATION_INFO'))
+                                pass
+                            elif energy['power_status'] == 'OFF':
+                                self.radioData['POWER'] = False
+                                self.radioData['POWER_STATUS'] = False
+                                pass
+                        else:
+                            self.logger.debug(
+                                "RadioInet: NACK {}".format(msgArray))
+
+                elif "SET" in msgArray[0]:
+                    print("RadioINet: MSG from Radio", msgArray)
+                    if msgArray[1] == 'VOLUME_ABSOLUTE':
+                        vol = {'vol': msgArray[1].split(':')[1]}
+                        #print("VOLUME", vol)
+                        self.logger.debug("RadioInet: VOLUME {}".format(vol))
+                        self.radioData['VOLUME'] = vol['vol']
+                        pass
+                elif "PLAYMODE" in msgArray[0]:
+                    print("RadioINet: MSG from Radio", msgArray)
+                    self.radioData['VOLUME'] = vol['vol']
+                elif "PLAY" in msgArray[0]:
+                    print("RadioINet: MSG from Radio", msgArray)
+                    self.sendCommand(self.msgBuilder('PLAYING_MODE'))
+                elif "SAVE" in msgArray[0]:
+                    print("RadioINet: MSG from Radio", msgArray)
+
+                elif "NOTIFICATION" in msgArray[0]:
+                    event = msgArray[3].split(':')[1]
+                    self.logger.debug(
+                        "RadioINet: Notification MSG from Radio", msgArray)
+
+                    if event == 'VOLUME_CHANGED':
+                        # read new volume
+                        self.logger.debug(
+                            "RadioInet: VOLUME changed MSG from Radio", msgArray)
+                        self.sendCommand(self.msgBuilder('VOLUME'))
+                    elif event == 'SYSTEM_BOOTED':
+                        # init read of all data
+                        self.logger.debug(
+                            "RadioInet: System booted MSG from Radio", msgArray)
+                        self.sendCommand(self.msgBuilder('ALL_STATION_INFO'))
+                    elif event == 'POWER_ON':
+                        # init read of all data
+                        self.logger.debug(
+                            "RadioInet: Power ON MSG from Radio", msgArray)
+                        self.radioData['POWER_STATUS'] = True
+                        self.sendCommand(self.msgBuilder('ALL_STATION_INFO'))
+
+                        # when poweron and "RED_ACT" = True => send "VOL_RED" to radio
+                        if self.radioData['RED_ACT'] == True:
+                            self.sendCommand(self.msgBuilder(
+                                'VOL_ABS', self.radioData['VOL_RED']))
+
+                    elif event == 'POWER_OFF':
+                        # init read of all data
+                        self.logger.debug(
+                            "RadioInet: POWER OFF MSG from Radio", msgArray)
+                        self.radioData['POWER_STATUS'] = False
+                    elif event == 'STATION_CHANGED':
+                        # init read new station
+                        self.logger.debug(
+                            "RadioInet: Station changed MSG from Radio", msgArray)
+                        self.sendCommand(self.msgBuilder('PLAYING_MODE'))
+                        self.sendCommand(self.msgBuilder('ALL_STATION_INFO'))
+                    elif event == 'URL_IS_PLAYING':
+                        # init read url of playing station
+                        self.logger.debug(
+                            "RadioInet: System booted MSG from Radio", msgArray)
+                        self.sendCommand(self.msgBuilder('PLAYING_MODE'))
+            else:
+                print("NACK")
+            print("radioDATA", self.radioData)
+        except Exception as e:
+            self.logger.debug("RadioInet: Cannot Decrypt Message{}".format(e))
+
+        # items immer nach nachricht von Radio updaten
+        self.update_items()
+
+    def UDPServer(self):
+        """
+        Creates a Socket Server to recieve Messages from the Radio
+        """
+        port = 4242
+        self.logger.debug("RadioInet: Open Udp Server port")
+        # Create Datagram Socket (UDP)
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # Allow incoming broadcasts
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 5)
+            s.setblocking(True)  # Set socket to non-blocking mode
+            s.bind(('', port))  # Accept Connections on port
+            while True:
+                # Buffer size is 8192. Change as needed.
+                message, adress = s.recvfrom(2048)
+                #self.logger.debug("RadioInet: msg recv {}".format(message.decode()))
+                self.msgDecryptor(message.decode())
+        except Exception as e:
+            self.logger.debug(
+                "RadioInet: UDP Server Cannot connect.{}".format(e))
+
+# ------------------------------------------
+#    Webinterface Methoden
+# ------------------------------------------
+
+    def get_connection_info(self):
+        info = {}
+        info['ip'] = self._ip
+        info['name'] = self._name
+        info['cycle'] = self._cycle
+        return info
+
+    def init_webinterface(self):
+        """"
+        Initialize the web interface for this plugin
+
+        This method is only needed if the plugin is implementing a web interface
+        """
+        try:
+            self.mod_http = Modules.get_instance().get_module(
+                'http')  # try/except to handle running in a core version that does not support modules
+        except:
+            self.mod_http = None
+        if self.mod_http == None:
+            self.logger.error(
+                "Plugin '{}': Not initializing the web interface".format(self.get_shortname()))
             return False
+
+        # set application configuration for cherrypy
+        webif_dir = self.path_join(self.get_plugin_dir(), 'webif')
+        config = {
+            '/': {
+                'tools.staticdir.root': webif_dir,
+            },
+            '/static': {
+                'tools.staticdir.on': True,
+                'tools.staticdir.dir': 'static'
+            }
+        }
+
+        self.logger.debug("Plugin Debug ausgabe '{0}': {1}, {2}, {3}, {4}, {5}".format(self.get_shortname(
+        ), webif_dir, self.get_shortname(), config,  self.get_classname(), self.get_instance_name()))
+        # Register the web interface as a cherrypy app
+        self.mod_http.register_webif(WebInterface(webif_dir, self),
+                                     self.get_shortname(),
+                                     config,
+                                     self.get_classname(), self.get_instance_name(),
+                                     description='')
+
+        return True
+
+
+# ------------------------------------------
+#    Webinterface of the plugin
+# ------------------------------------------
+
+
+class WebInterface(SmartPluginWebIf):
+
+    def __init__(self, webif_dir, plugin):
+        """
+        Initialization of instance of class WebInterface
+
+        :param webif_dir: directory where the webinterface of the plugin resides
+        :param plugin: instance of the plugin
+        :type webif_dir: str
+        :type plugin: object
+        """
+        self.logger = logging.getLogger(__name__)
+        self.webif_dir = webif_dir
+        self.plugin = plugin
+        self.tplenv = self.init_template_environment()
+        self.logger.debug("Plugin : Init Webif")
+        self.items = Items.get_instance()
+
+    @cherrypy.expose
+    def index(self, reload=None):
+        """
+        Build index.html for cherrypy
+        Render the template and return the html file to be delivered to the browser
+        :return: contents of the template after beeing rendered
+        """
+        plgitems = []
+        for item in self.items.return_items():
+            if ('radioInet' in item.conf):
+                plgitems.append(item)
+                self.logger.debug("Plugin : Render index Webif")
+        tmpl = self.tplenv.get_template('index.html')
+        return tmpl.render(plugin_shortname=self.plugin.get_shortname(),
+                           plugin_version=self.plugin.get_version(),
+                           plugin_info=self.plugin.get_info(),
+                           p=self.plugin,
+                           connection=self.plugin.get_connection_info(),
+                           webif_dir=self.webif_dir,
+                           items=sorted(plgitems, key=lambda k: str.lower(k['_path'])))
