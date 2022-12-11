@@ -306,7 +306,7 @@ class Dbird(SmartPlugin):
         """
         image_dir = os.path.join(self._image_path, folder)
         filename = Path(image_dir)
-        self.logger.debug("Doorbird: filename {}".format(filename))
+        self.logger.debug("Doorbird: foldername {}".format(filename))
         # absolutpfad  zum script
         #path = filename.absolute().as_uri()
 
@@ -400,6 +400,7 @@ class Dbird(SmartPlugin):
                         timestamp = struct.unpack(">L", plaintext[14:18])[0]
                         self._data['event_time'] = datetime.fromtimestamp(
                             timestamp+(3600*1))  # convert it to MEZ
+                        
                     except Exception as e:
                         self.logger.info(
                             "Doorbird: Error maybe wrong user? {}".format(e))
@@ -407,12 +408,13 @@ class Dbird(SmartPlugin):
 
                     if decrypted_event == 'motion':
                         self._motionAction()
-                    elif decrypted_event.isnumeric():
+                    else :#decrypted_event.isnumeric():
                         # kompaktklingelanlagen 1-2-3 Tasten
-                        if int(decrypted_event) < '100':
+                        self.logger.debug("Doorbird: Dorrbell EVENT erkannt!, {}".format(int(decrypted_event)))
+                        if int(decrypted_event) < 100:
                             self._data['triggernumber'] = int(decrypted_event)
                         # mehrtastenmodule ab 10 Tasten
-                        elif int(decrypted_event) >= '100':
+                        elif int(decrypted_event) >= 100:
                             self._data['triggernumber'] = int(
                                 decrypted_event[1:])
 
@@ -458,7 +460,7 @@ class Dbird(SmartPlugin):
         """
         self.logger.info("Doorbird: Motion trigger erkannt")
         self._data['motion_sensor_state'] = True
-        if self._image_doorbell_dir != "":
+        if self._image_motion_dir != "":
             self.make_snapshot(self._image_motion_dir)
 
     def _doorbellAction(self):
@@ -566,5 +568,5 @@ class WebInterface(SmartPluginWebIf):
                            connection=self.plugin.get_connection_info(),
                            webif_dir=self.webif_dir,
                            image_snapshots=self.plugin.get_files(
-                               self.plugin._image_snapshots_dir),
+                    'web', self.plugin._image_snapshots_dir),
                            items=sorted(plgitems, key=lambda k: str.lower(k['_path'])))
