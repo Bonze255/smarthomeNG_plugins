@@ -53,7 +53,7 @@ parameters:
         de: 'Pfad zumm Zugriff auf Ordner über webserver z.B: http://192.168.178.91/smartVisu2.9/doorbirdimg/'
         en: 'Webserver Path to access Image files'
     image_path: 
-        de: 'Speicherpfad der Bilderordner: 
+        de: 'Speicherpfad der Bilderordner:'
         en: 'Direct path to acess the saved pictures'
     max_files: 
         de: 'Anzahl der zu speichernden Snapshots'
